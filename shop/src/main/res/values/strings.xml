@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="error_message">Loading error. Please try again</string>
+    <string name="reload_button">Reload</string>
+    <string name="empty_list_message">List is empty</string>
+</resources>
