@@ -9,6 +9,7 @@ import com.immflyretail.inseat.sdk.api.models.Category
 import com.immflyretail.inseat.sdk.api.models.Menu
 import com.immflyretail.inseat.sdk.api.models.Product
 import com.immflyretail.inseat.sdk.api.models.ShopInfo
+import com.immflyretail.inseat.sdk.api.models.UserData
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -62,7 +63,7 @@ internal class ListRepositoryImpl @Inject constructor(
     }
 
     override suspend fun selectMenu(menu: Menu) {
-        inseatApi.setUserData(menu)
+        inseatApi.setUserData(UserData(menu))
     }
 
     override suspend fun isMenuSelected() : Boolean {

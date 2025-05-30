@@ -377,6 +377,18 @@ private fun ListItem(
                     color = textColor,
                 ),
             )
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 5.dp),
+                text = "Stock: " + item.product.quantity.toString(),
+                style = TextStyle(
+                    fontSize = 12.sp,
+                    lineHeight = 20.sp,
+                    fontWeight = FontWeight(400),
+                    color = textColor,
+                ),
+            )
         }
     }
 }

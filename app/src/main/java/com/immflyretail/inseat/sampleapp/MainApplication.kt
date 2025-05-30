@@ -5,6 +5,7 @@ import com.immflyretail.inseat.sampleapp.preferences.api.preferencesmanager.BASK
 import com.immflyretail.inseat.sampleapp.preferences.api.preferencesmanager.PreferencesManager
 import com.immflyretail.inseat.sdk.api.InseatApi
 import com.immflyretail.inseat.sdk.api.NetworkException
+import com.immflyretail.inseat.sdk.api.models.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
@@ -27,7 +28,9 @@ class MainApplication : Application() {
             val api = InseatApi.getInstance()
             api.initialize(
                 applicationContext = this@MainApplication,
-                apiKey = "put-your-api-key-here"
+                configuration = Configuration(
+                    apiKey = "put-your-api-key-here",
+                )
             )
 
             try {

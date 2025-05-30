@@ -60,7 +60,6 @@ dependencies {
 
     // Inseat SDK
     implementation(libs.inseat)
-    implementation(libs.bundles.inseat)
 
     // DI
     implementation(libs.hilt)

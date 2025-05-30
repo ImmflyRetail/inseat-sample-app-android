@@ -27,20 +27,14 @@ hiltNavigationCompose = "1.2.0"
 #Libs
 hilt = "2.55"
 gson = "2.11.0"
-okHttp = "4.12.0"
 datastorePreferences = "1.1.3"
 security_crypto = "1.1.0-alpha06"
-logging_interceptor = "4.12.0"
 navigation = "2.8.9"
 timber = "5.0.1"
 kotlinxSerialization = "1.8.0"
 uiTextGoogleFonts = "1.7.8"
 uiTooling = "1.7.8"
-annotation = "1.7.0"
-jackson_databind = "2.13.4.2"
-jackson_dataformat_cbor = "2.13.4"
-jackson_module_kotlin = "2.13.4"
-inseat = "0.0.5"
+inseat = "0.1.0"
 
 [libraries]
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
@@ -71,20 +65,11 @@ androidx-lifecycle-runtimeCompose = { group = "androidx.lifecycle", name = "life
 # Libs
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 kotlinx-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
-okHttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okHttp" }
-loggingInterceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "logging_interceptor" }
 navigation = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigation" }
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 hilt = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-android-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "uiTooling" }
-
-# Inseat
-jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson_databind" }
-jackson-dataformat-cbor = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-cbor", version.ref = "jackson_dataformat_cbor" }
-jackson-module-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson_module_kotlin" }
-annotation = { group = "androidx.annotation", name = "annotation", version.ref = "annotation" }
-kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
 
 [plugins]
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
@@ -107,17 +92,4 @@ compose = [
     "androidx-compose-livedata",
     "androidx-lifecycle-runtimeCompose",
     "androidx-compose-ui-tooling-preview"
-]
-
-inseat = [
-    "okHttp",
-    "loggingInterceptor",
-    "coreKtx",
-    "appcompat",
-    "kotlinx-serialization",
-    "annotation",
-    "jackson-databind",
-    "jackson-dataformat-cbor",
-    "jackson-module-kotlin",
-    "kotlin-reflect"
 ]

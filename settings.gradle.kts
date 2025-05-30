@@ -19,8 +19,8 @@ dependencyResolutionManagement {
         maven {
             url = uri("https://app-cdn.immflyretail.link/inseat-android-sdk/")
             credentials {
-                username = "username"
-                password = "password"
+                username = "put-your-username-here"
+                password = "put-your-password-here"
             }
         }
     }
