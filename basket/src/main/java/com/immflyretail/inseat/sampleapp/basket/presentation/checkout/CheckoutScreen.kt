@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -24,6 +25,9 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,6 +35,7 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -45,11 +50,12 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.immflyretail.inseat.sampleapp.basket.R
 import com.immflyretail.inseat.sampleapp.basket.presentation.basket.model.BasketItem
+import com.immflyretail.inseat.sampleapp.core.extension.execute
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
-import com.immflyretail.inseat.sampleapp.ui.ImmseatButton
+import com.immflyretail.inseat.sampleapp.ui.InseatButton
 import com.immflyretail.inseat.sampleapp.ui.Loading
 import com.immflyretail.inseat.sampleapp.ui.Screen
-import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
+import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
 import java.math.BigDecimal
 
 fun NavGraphBuilder.checkoutScreen(navController: NavController) {
@@ -59,46 +65,64 @@ fun NavGraphBuilder.checkoutScreen(navController: NavController) {
 
         CheckoutScreen(
             uiState = uiState,
-            onMakeOrderClicked = {
-                viewModel.obtainEvent(
-                    CheckoutScreenEvent.OnMakeOrderClicked(
-                        navigation = { navController.navigate(ShopScreenContract.Route) }
-                    )
-                )
-            },
-            onDetailsClicked = {
-                viewModel.obtainEvent(CheckoutScreenEvent.OnDetailsClicked)
-            },
-            onSeatNumberEntered = { seatNumber ->
-                viewModel.obtainEvent(CheckoutScreenEvent.OnSeatNumberEntered(seatNumber))
-            }
+            navController = navController,
+            viewModel = viewModel
         )
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CheckoutScreen(
     uiState: CheckoutScreenState,
-    onMakeOrderClicked: () -> Unit,
-    onDetailsClicked: () -> Unit,
-    onSeatNumberEntered: (String) -> Unit,
+    navController: NavController,
+    viewModel: CheckoutScreenViewModel,
     modifier: Modifier = Modifier
 ) {
     Screen(
         modifier = modifier,
         title = "Checkout",
+        onBackClicked = { viewModel.obtainEvent(CheckoutScreenEvent.OnBackClicked) },
     ) {
+        var showBottomSheet by remember { mutableStateOf(false) }
+        var isOrderSuccess by remember { mutableStateOf(false) }
+//        val sheetState = rememberModalBottomSheetState()
 
         when (uiState) {
             is CheckoutScreenState.Data -> ContentScreen(
                 uiState = uiState,
-                onMakeOrderClicked = { onMakeOrderClicked.invoke() },
-                onDetailsClicked = { onDetailsClicked.invoke() },
-                onSeatNumberEntered = { onSeatNumberEntered.invoke(it) }
+                onMakeOrderClicked = { viewModel.obtainEvent(CheckoutScreenEvent.OnMakeOrderClicked) },
+                onDetailsClicked = { viewModel.obtainEvent(CheckoutScreenEvent.OnDetailsClicked) },
+                onSeatNumberEntered = {
+                    viewModel.obtainEvent(
+                        CheckoutScreenEvent.OnSeatNumberEntered(
+                            it
+                        )
+                    )
+                }
             )
 
             is CheckoutScreenState.Error -> ErrorScreen(uiState.message)
             CheckoutScreenState.Loading -> Loading()
+        }
+
+        SingleEventEffect(viewModel.uiAction) { action ->
+            when (action) {
+                is CheckoutScreenActions.Navigate -> navController.execute(action.lambda)
+                is CheckoutScreenActions.ShowDialog -> {
+                    isOrderSuccess = action.isOrderSuccess
+                    showBottomSheet = true
+                }
+            }
+        }
+
+        if (showBottomSheet) {
+            OrderResultDialog(
+                isOrderSuccess = isOrderSuccess,
+                onClickClose = { viewModel.obtainEvent(CheckoutScreenEvent.OnClickKeepShopping) },
+                onClickOrderStatus = { viewModel.obtainEvent(CheckoutScreenEvent.OnClickOrderStatus) },
+                onDismissRequest = { showBottomSheet = false },
+            )
         }
     }
 }
@@ -111,59 +135,63 @@ private fun ContentScreen(
     onDetailsClicked: () -> Unit = {},
     onSeatNumberEntered: (String) -> Unit = {},
 ) {
-
-val isSeatNumberValid = uiState.seatNumber.matches(Regex("^[0-9]{1,2}[A-Za-z]$"))
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-            .background(MaterialTheme.colorScheme.background),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+    Box(
+        modifier = modifier.fillMaxSize(),
     ) {
-        item {
-            Box(
-                modifier = Modifier
-                    .padding(top = 24.dp)
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-            ) {
-                if (uiState.isExpanded) {
-                    ExpandedSummary(
-                        items = uiState.items,
-                        total = uiState.total,
-                        currency = uiState.currency,
-                        onDetailsClicked = onDetailsClicked,
-                    )
-                } else {
-                    CollapsedSummary(
-                        items = uiState.items,
-                        total = uiState.total,
-                        currency = uiState.currency,
-                        onDetailsClicked = onDetailsClicked,
-                    )
+
+        val isSeatNumberValid = uiState.seatNumber.matches(Regex("^[0-9]{1,2}[A-Za-z]$"))
+        LazyColumn(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 80.dp)
+                .background(MaterialTheme.colorScheme.background),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .padding(top = 24.dp)
+                        .fillMaxWidth()
+                        .wrapContentHeight()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                ) {
+                    if (uiState.isExpanded) {
+                        ExpandedSummary(
+                            items = uiState.items,
+                            total = uiState.total,
+                            currency = uiState.currency,
+                            onDetailsClicked = onDetailsClicked,
+                        )
+                    } else {
+                        CollapsedSummary(
+                            items = uiState.items,
+                            total = uiState.total,
+                            currency = uiState.currency,
+                            onDetailsClicked = onDetailsClicked,
+                        )
+                    }
                 }
             }
+
+            item {
+                EnterDetailsBlock(
+                    enteredSeatNumber = uiState.seatNumber,
+                    isSeatNumberValid = isSeatNumberValid,
+                    onSeatNumberEntered = onSeatNumberEntered
+                )
+            }
+
+            item { InfoBlock() }
         }
 
-        item {
-            EnterDetailsBlock(
-                enteredSeatNumber = uiState.seatNumber,
-                isSeatNumberValid = isSeatNumberValid,
-                onSeatNumberEntered = onSeatNumberEntered
-            )
-        }
-
-        item { InfoBlock() }
-
-        item {
-            ImmseatButton(
-                text = "Order now",
-                onClick = { onMakeOrderClicked.invoke() },
-                isEnabled = isSeatNumberValid
-            )
-        }
+        InseatButton(
+            text = stringResource(R.string.order_now),
+            onClick = { onMakeOrderClicked.invoke() },
+            isEnabled = isSeatNumberValid,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
+        )
     }
 }
 

@@ -9,4 +9,5 @@ sealed interface ShopScreenEvent {
     data object OnRefresh : ShopScreenEvent
     data object ClickOnCategories : ShopScreenEvent
     data object CloseCategories : ShopScreenEvent
+    data object OnCartClicked : ShopScreenEvent
 }

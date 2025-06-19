@@ -14,6 +14,7 @@ sealed interface ShopScreenState {
         val items: List<ShopItem>,
         val isPullToRefreshEnabled: Boolean,
         val isRefreshing: Boolean = false,
-        val categories: List<Category>? = null
+        val categories: List<Category>? = null,
+        val itemsInBasket: Int = 0,
     ) : ShopScreenState
 }

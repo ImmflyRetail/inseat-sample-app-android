@@ -1,3 +1,5 @@
+import java.util.Properties
+
 pluginManagement {
     repositories {
         google {
@@ -11,16 +13,29 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+
+val localProps = Properties().apply {
+    val file = file("local.properties")
+    if (file.exists()) {
+        load(file.inputStream())
+    }
+}
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
+        // Debug repository for local development
+        maven {
+            url = uri("http://192.168.1.66/")
+            isAllowInsecureProtocol = true
+        }
         maven {
             url = uri("https://app-cdn.immflyretail.link/inseat-android-sdk/")
             credentials {
-                username = "put-your-username-here"
-                password = "put-your-password-here"
+                username = "${localProps.getProperty("USERNAME", "")}"
+                password = "${localProps.getProperty("PASSWORD", "")}"
             }
         }
     }

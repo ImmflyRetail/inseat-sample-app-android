@@ -47,17 +47,14 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.immflyretail.inseat.sampleapp.basket.R
 import com.immflyretail.inseat.sampleapp.basket.presentation.basket.model.BasketItem
-import com.immflyretail.inseat.sampleapp.basket.presentation.checkout.CheckoutScreenContract
 import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenContract
-import com.immflyretail.inseat.sampleapp.ui.BottomNavItem
-import com.immflyretail.inseat.sampleapp.ui.BottomNavigationBar
+import com.immflyretail.inseat.sampleapp.core.extension.execute
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
-import com.immflyretail.inseat.sampleapp.ui.ImmseatButton
+import com.immflyretail.inseat.sampleapp.ui.InseatButton
 import com.immflyretail.inseat.sampleapp.ui.Loading
 import com.immflyretail.inseat.sampleapp.ui.Screen
-import com.immflyretail.inseat.sampleapp.orders_api.OrdersScreenContract
-import com.immflyretail.inseat.sampleapp.settings_api.SettingsScreenContract
-import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_16
+import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
 import java.math.BigDecimal
 
 fun NavGraphBuilder.basketScreen(navController: NavController) {
@@ -67,23 +64,8 @@ fun NavGraphBuilder.basketScreen(navController: NavController) {
 
         BasketScreen(
             uiState = uiState,
-            onBottomNavSelected = { item ->
-                when (item) {
-                    BottomNavItem.Cart -> {}
-                    BottomNavItem.Shop -> navController.navigate(ShopScreenContract.Route)
-                    BottomNavItem.MyOrders -> navController.navigate(OrdersScreenContract.Route)
-                    BottomNavItem.Settings -> navController.navigate(SettingsScreenContract.Route)
-                }
-            },
-            onMakeOrderClicked = {
-                navController.navigate(CheckoutScreenContract.Route)
-            },
-            onAddClicked = { itemId ->
-                viewModel.obtainEvent(BasketScreenEvent.OnAddItemClicked(itemId))
-            },
-            onRemoveClicked = { itemId ->
-                viewModel.obtainEvent(BasketScreenEvent.OnRemoveItemClicked(itemId))
-            }
+            viewModel = viewModel,
+            navController = navController
         )
     }
 }
@@ -91,28 +73,27 @@ fun NavGraphBuilder.basketScreen(navController: NavController) {
 @Composable
 private fun BasketScreen(
     uiState: BasketScreenState,
-    onBottomNavSelected: (BottomNavItem) -> Unit,
-    onMakeOrderClicked: () -> Unit,
-    onAddClicked: (Int) -> Unit,
-    onRemoveClicked: (Int) -> Unit,
+    viewModel: BasketScreenViewModel,
+    navController: NavController,
     modifier: Modifier = Modifier
 ) {
     Screen(
         modifier = modifier,
         title = "Shopping cart",
-        bottomNavigation = { BottomNavigationBar { item -> onBottomNavSelected.invoke(item) } }
+        onBackClicked = { viewModel.obtainEvent(BasketScreenEvent.OnBackClicked) },
     ) {
 
         when (uiState) {
-            is BasketScreenState.DataLoaded -> ContentScreen(
-                uiState = uiState,
-                onMakeOrderClicked = { onMakeOrderClicked.invoke() },
-                onRemoveClicked = { onRemoveClicked.invoke(it) },
-                onAddClicked = { onAddClicked.invoke(it) }
-            )
+            is BasketScreenState.DataLoaded -> ContentScreen(uiState, viewModel)
 
             is BasketScreenState.Error -> ErrorScreen(uiState.message)
             BasketScreenState.Loading -> Loading()
+        }
+
+        SingleEventEffect(viewModel.uiAction) { action ->
+            when (action) {
+                is BasketScreenActions.Navigate -> navController.execute(action.lambda)
+            }
         }
     }
 }
@@ -120,9 +101,7 @@ private fun BasketScreen(
 @Composable
 private fun ContentScreen(
     uiState: BasketScreenState.DataLoaded,
-    onMakeOrderClicked: () -> Unit = {},
-    onAddClicked: (Int) -> Unit = {},
-    onRemoveClicked: (Int) -> Unit = {},
+    viewModel: BasketScreenViewModel,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -158,8 +137,8 @@ private fun ContentScreen(
                 items(items = uiState.items, itemContent = { item ->
                     ListItem(
                         item = item,
-                        onAddClicked = onAddClicked,
-                        onRemoveClicked = onRemoveClicked
+                        onAddClicked = {viewModel.obtainEvent(BasketScreenEvent.OnAddItemClicked(it))},
+                        onRemoveClicked = {viewModel.obtainEvent(BasketScreenEvent.OnRemoveItemClicked(it))}
                     )
                 })
                 item {
@@ -168,14 +147,42 @@ private fun ContentScreen(
             }
         }
 
-        ImmseatButton(
+        Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(16.dp),
-            text = "Checkout",
-            onClick = { onMakeOrderClicked.invoke() },
-            isEnabled = uiState.items.isNotEmpty()
-        )
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Row(
+                modifier = Modifier
+                    .height(48.dp)
+                    .wrapContentWidth()
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
+                    .clickable { viewModel.obtainEvent(BasketScreenEvent.OnAddMoreClicked) },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(5.dp),
+                    painter = painterResource(id = R.drawable.ic_plus_red),
+                    contentDescription = "Plus icon"
+                )
+                Text(
+                    modifier = Modifier.padding(start = 8.dp),
+                    text = "Add more",
+                    style = B_16,
+                    color = Color(0xFFDD083A)
+                )
+            }
+            InseatButton(
+                text = "Checkout",
+                onClick = { viewModel.obtainEvent(BasketScreenEvent.OnCheckoutClicked) },
+                isEnabled = uiState.items.isNotEmpty()
+            )
+
+        }
     }
 }
 

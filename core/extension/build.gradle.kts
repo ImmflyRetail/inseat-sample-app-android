@@ -14,4 +14,5 @@ android {
 dependencies {
     implementation(libs.coreKtx)
     implementation(libs.fragmentKtx)
+    implementation(libs.navigation)
 }

@@ -2,6 +2,9 @@ package com.immflyretail.inseat.sampleapp.basket.presentation.checkout
 
 sealed interface CheckoutScreenEvent {
     data class OnSeatNumberEntered(val seatNumber: String) : CheckoutScreenEvent
-    data class OnMakeOrderClicked(val navigation: ()-> Unit) : CheckoutScreenEvent
+    data object OnMakeOrderClicked : CheckoutScreenEvent
     data object OnDetailsClicked : CheckoutScreenEvent
+    data object OnClickOrderStatus : CheckoutScreenEvent
+    data object OnBackClicked : CheckoutScreenEvent
+    data object OnClickKeepShopping : CheckoutScreenEvent
 }

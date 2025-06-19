@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="order_result_dialog_title_success">Your order\'s in!</string>
+    <string name="order_result_dialog_title_failure">Something went wrong</string>
+    <string name="order_result_dialog_message_success">Sit back and relax! A crew member will bring your order to you.</string>
+    <string name="order_result_dialog_message_failure">We couldn\'t process your order. Please try again in some minutes.</string>
+    <string name="order_result_dialog_keep_shopping_button">Keep shopping</string>
+    <string name="order_result_dialog_view_order_status_button">View order status</string>
+    <string name="order_result_dialog_try_again_button">I understand</string>
+    <string name="order_now">Order now</string>
+</resources>

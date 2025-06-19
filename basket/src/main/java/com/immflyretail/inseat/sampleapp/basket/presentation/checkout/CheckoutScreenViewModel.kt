@@ -3,14 +3,19 @@ package com.immflyretail.inseat.sampleapp.basket.presentation.checkout
 import androidx.lifecycle.ViewModel
 import com.immflyretail.inseat.sampleapp.basket.data.CheckoutRepository
 import com.immflyretail.inseat.sampleapp.basket.presentation.basket.model.BasketItem
+import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenContract
 import com.immflyretail.inseat.sampleapp.core.extension.runCoroutine
+import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
 import com.immflyretail.inseat.sdk.api.InseatException
 import com.immflyretail.inseat.sdk.api.models.Order
 import com.immflyretail.inseat.sdk.api.models.OrderItem
 import com.immflyretail.inseat.sdk.api.models.OrderStatusEnum
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.serialization.json.Json
 import java.math.BigDecimal
 import java.util.Date
@@ -25,6 +30,9 @@ class CheckoutScreenViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<CheckoutScreenState>(CheckoutScreenState.Loading)
     val uiState: StateFlow<CheckoutScreenState> get() = _uiState
 
+    private val _uiAction = Channel<CheckoutScreenActions>()
+    val uiAction: Flow<CheckoutScreenActions> get() = _uiAction.receiveAsFlow()
+
     init {
         loadData()
     }
@@ -35,41 +43,7 @@ class CheckoutScreenViewModel @Inject constructor(
         if (state !is CheckoutScreenState.Data) return
 
         when (event) {
-            is CheckoutScreenEvent.OnMakeOrderClicked -> {
-                _uiState.value = CheckoutScreenState.Loading
-                runCoroutine {
-                    val createdTime = Date()
-                    repository.makeOrder(
-                        Order(
-                            id = UUID.randomUUID().toString(),
-                            shiftId = repository.getShiftId(),
-                            totalPrice = state.total,
-                            currency = state.currency,
-                            items = state.items.map {
-                                OrderItem(
-                                    itemId = it.product.itemId,
-                                    name = it.product.name,
-                                    quantity = it.quantity,
-                                    price = it.product.prices.first().price
-                                )
-                            },
-                            status = OrderStatusEnum.PLACED,
-                            customerSeatNumber = state.seatNumber,
-                            createdAt = createdTime,
-                            updatedAt = createdTime,
-                        )
-                    ) { result ->
-                        result
-                            .onSuccess {
-                                runCoroutine { repository.clearBasket() }
-                                event.navigation.invoke()
-                            }
-                            .onFailure {
-                                _uiState.value = CheckoutScreenState.Error("Can't make order")
-                            }
-                    }
-                }
-            }
+            is CheckoutScreenEvent.OnMakeOrderClicked -> makeOrder(state)
 
             CheckoutScreenEvent.OnDetailsClicked -> {
                 _uiState.value = state.copy(isExpanded = !state.isExpanded)
@@ -77,6 +51,61 @@ class CheckoutScreenViewModel @Inject constructor(
 
             is CheckoutScreenEvent.OnSeatNumberEntered -> {
                 _uiState.value = state.copy(seatNumber = event.seatNumber)
+            }
+
+            CheckoutScreenEvent.OnClickOrderStatus -> runCoroutine {
+                _uiAction.send(CheckoutScreenActions.Navigate { navigate(ShopScreenContract.Route) })
+            }
+
+            CheckoutScreenEvent.OnBackClicked -> runCoroutine {
+                _uiAction.send(CheckoutScreenActions.Navigate { popBackStack() })
+            }
+
+            CheckoutScreenEvent.OnClickKeepShopping -> runCoroutine {
+                _uiAction.send(CheckoutScreenActions.Navigate {
+                    navigate(ShopScreenContract.Route) {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                })
+            }
+        }
+    }
+
+    private fun makeOrder(state: CheckoutScreenState.Data) {
+        _uiState.value = CheckoutScreenState.Loading
+        runCoroutine {
+            val createdTime = Date()
+            repository.makeOrder(
+                Order(
+                    id = UUID.randomUUID().toString(),
+                    shiftId = repository.getShiftId(),
+                    totalPrice = state.total,
+                    currency = state.currency,
+                    items = state.items.map {
+                        OrderItem(
+                            itemId = it.product.itemId,
+                            name = it.product.name,
+                            quantity = it.quantity,
+                            price = it.product.prices.first().price
+                        )
+                    },
+                    status = OrderStatusEnum.PLACED,
+                    customerSeatNumber = state.seatNumber,
+                    createdAt = createdTime,
+                    updatedAt = createdTime,
+                )
+            ) { result ->
+                runCoroutine {
+                    result
+                        .onSuccess {
+                            repository.clearBasket()
+                            _uiAction.send(CheckoutScreenActions.ShowDialog(isOrderSuccess = true))
+                        }
+                        .onFailure {
+                            _uiAction.send(CheckoutScreenActions.ShowDialog(isOrderSuccess = false))
+                        }
+                }
             }
         }
     }

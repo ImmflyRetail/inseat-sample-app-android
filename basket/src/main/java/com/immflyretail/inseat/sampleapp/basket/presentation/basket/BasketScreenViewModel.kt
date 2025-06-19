@@ -3,11 +3,16 @@ package com.immflyretail.inseat.sampleapp.basket.presentation.basket
 import androidx.lifecycle.ViewModel
 import com.immflyretail.inseat.sampleapp.basket.data.BasketRepository
 import com.immflyretail.inseat.sampleapp.basket.presentation.basket.model.BasketItem
+import com.immflyretail.inseat.sampleapp.basket.presentation.checkout.CheckoutScreenContract
 import com.immflyretail.inseat.sampleapp.core.extension.runCoroutine
+import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
 import com.immflyretail.inseat.sdk.api.InseatException
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.serialization.json.Json
 import java.math.BigDecimal
 import javax.inject.Inject
@@ -19,6 +24,9 @@ class BasketScreenViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow<BasketScreenState>(BasketScreenState.Loading)
     val uiState: StateFlow<BasketScreenState> get() = _uiState
+
+    private val _uiAction = Channel<BasketScreenActions>()
+    val uiAction: Flow<BasketScreenActions> get() = _uiAction.receiveAsFlow()
 
     private var selectedItems = mutableMapOf<Int, Int>()
 
@@ -34,9 +42,22 @@ class BasketScreenViewModel @Inject constructor(
                     repository.setBasketItemsJSON(Json.encodeToString(selectedItems))
                 }
             }
+
             is BasketScreenEvent.OnRemoveItemClicked -> {
                 uiState.value.decreaseSelectedQuantity(event.itemId)
                 runCoroutine { repository.setBasketItemsJSON(Json.encodeToString(selectedItems)) }
+            }
+
+            BasketScreenEvent.OnAddMoreClicked -> runCoroutine {
+                _uiAction.send(BasketScreenActions.Navigate { navigate(ShopScreenContract.Route) })
+            }
+
+            BasketScreenEvent.OnBackClicked -> runCoroutine {
+                _uiAction.send(BasketScreenActions.Navigate { popBackStack() })
+            }
+
+            BasketScreenEvent.OnCheckoutClicked -> runCoroutine {
+                _uiAction.send(BasketScreenActions.Navigate { navigate(CheckoutScreenContract.Route) })
             }
         }
     }
@@ -46,7 +67,7 @@ class BasketScreenViewModel @Inject constructor(
 
         selectedItems = try {
             Json.decodeFromString<Map<Int, Int>>(repository.getBasketItemsJSON()).toMutableMap()
-        } catch (e: Exception){
+        } catch (e: Exception) {
             mutableMapOf()
         }
 
@@ -78,7 +99,7 @@ class BasketScreenViewModel @Inject constructor(
         if (this !is BasketScreenState.DataLoaded) return
 
         val items = items.toMutableList()
-        val updatedIndex = items.indexOfFirst {  it.product.itemId == itemId }
+        val updatedIndex = items.indexOfFirst { it.product.itemId == itemId }
         if (updatedIndex != -1) {
             val newQuantity = items[updatedIndex].quantity + 1
             items[updatedIndex] = items[updatedIndex].copy(quantity = newQuantity)
@@ -92,7 +113,7 @@ class BasketScreenViewModel @Inject constructor(
         if (this !is BasketScreenState.DataLoaded) return
 
         val items = items.toMutableList()
-        val updatedIndex = items.indexOfFirst {  it.product.itemId == itemId }
+        val updatedIndex = items.indexOfFirst { it.product.itemId == itemId }
         if (updatedIndex != -1) {
             val newQuantity = items[updatedIndex].quantity - 1
             items[updatedIndex] = items[updatedIndex].copy(quantity = newQuantity)

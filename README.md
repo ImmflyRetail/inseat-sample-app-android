@@ -7,7 +7,7 @@ How to run the project
     dependencyResolutionManagement {
       repositories {
          maven {
-            url = uri("https://app-cdn.immflyretail.link/inseat-android-sdk/")
+            url = uri("https://app-cdn.immflyretail.live/inseat-android-sdk/")
             credentials {
                username = "enter-your-username-here"
                password = "enter-your-password-here"
@@ -19,7 +19,7 @@ How to run the project
 2. Add to your module's `build.gradle.kts` file the following code:
    ```kotlin
    dependencies {
-       implementation("com.immflyretail.inseat.sdk:inseat:0.1.1")
+       implementation("com.immflyretail.inseat.sdk:inseat:0.1.2")
    }
    ```
 

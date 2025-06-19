@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
@@ -35,7 +36,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -57,10 +58,11 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenContract
+import com.immflyretail.inseat.sampleapp.core.extension.execute
 import com.immflyretail.inseat.sampleapp.ui.BottomNavItem
 import com.immflyretail.inseat.sampleapp.ui.BottomNavigationBar
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
-import com.immflyretail.inseat.sampleapp.ui.ImmseatButton
+import com.immflyretail.inseat.sampleapp.ui.InseatButton
 import com.immflyretail.inseat.sampleapp.ui.Loading
 import com.immflyretail.inseat.sampleapp.ui.Screen
 import com.immflyretail.inseat.sampleapp.shop.R
@@ -78,22 +80,7 @@ fun NavGraphBuilder.shopScreen(navController: NavController) {
         val viewModel: ShopScreenViewModel = hiltViewModel()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-        ShopScreen(
-            uiState,
-            viewModel,
-            onBottomNavSelected = { item ->
-                when (item) {
-                    BottomNavItem.Cart -> navController.navigate(BasketScreenContract.Route) {
-                        popUpTo(0) { inclusive = true }
-                        launchSingleTop = true
-                    }
-
-                    BottomNavItem.Shop -> {}
-                    BottomNavItem.MyOrders -> navController.navigate(OrdersScreenContract.Route)
-                    BottomNavItem.Settings -> navController.navigate(SettingsScreenContract.Route)
-                }
-            },
-        )
+        ShopScreen(uiState, viewModel, navController)
     }
 }
 
@@ -101,24 +88,58 @@ fun NavGraphBuilder.shopScreen(navController: NavController) {
 fun ShopScreen(
     uiState: ShopScreenState,
     viewModel: ShopScreenViewModel,
-    onBottomNavSelected: (BottomNavItem) -> Unit,
+    navController: NavController
 ) {
 
     Screen(
         modifier = Modifier.background(color = MaterialTheme.colorScheme.background),
-        title = "Shop",
-        bottomNavigation = { BottomNavigationBar { onBottomNavSelected.invoke(it) } },
+        title = stringResource(R.string.shop),
+        isBackButtonEnabled = false,
         toolbarItem = {
-            if (uiState is ShopScreenState.DataLoaded) {
-                Image(
-                    modifier = Modifier
-                        .padding(end = 16.dp)
-                        .size(24.dp)
-                        .clickable { viewModel.obtainEvent(ShopScreenEvent.ClickOnCategories) }
-                        .focusable(),
-                    painter = painterResource(id = R.drawable.ic_filters),
-                    contentDescription = "Collections"
-                )
+            if (uiState is ShopScreenState.DataLoaded && uiState.shopStatus == ShopStatus.ORDER) {
+                Row(Modifier.padding(end = 16.dp)) {
+                    Image(
+                        modifier = Modifier
+                            .padding(end = 16.dp)
+                            .size(24.dp)
+                            .clickable { viewModel.obtainEvent(ShopScreenEvent.ClickOnCategories) }
+                            .focusable(),
+                        painter = painterResource(id = R.drawable.ic_search),
+                        contentDescription = "Collections"
+                    )
+                    Box(
+                        Modifier.size(24.dp)
+                    ) {
+                        Image(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable { viewModel.obtainEvent(ShopScreenEvent.OnCartClicked) }
+                                .focusable(),
+                            painter = painterResource(id = R.drawable.ic_basket),
+                            contentDescription = "Collections"
+                        )
+                        if (uiState.itemsInBasket > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .size(14.dp)
+                                    .background(Color(0xFFD40E14), shape = CircleShape)
+                                    .align(Alignment.BottomEnd),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = uiState.itemsInBasket.toString(),
+                                    style = TextStyle(
+                                        fontSize = 8.17.sp,
+                                        lineHeight = 12.83.sp,
+                                        fontWeight = FontWeight(600),
+                                        color = Color(0xFFFFFFFF),
+                                        textAlign = TextAlign.Center,
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     ) {
@@ -135,12 +156,9 @@ fun ShopScreen(
             )
         }
 
-        val context = LocalContext.current
         SingleEventEffect(viewModel.uiAction) { action ->
             when (action) {
-                is ShopScreenActions.Message -> Toast
-                    .makeText(context, action.text, Toast.LENGTH_SHORT)
-                    .show()
+                is ShopScreenActions.Navigate -> navController.execute(action.lambda)
             }
         }
     }
@@ -172,15 +190,17 @@ fun MainData(
     viewModel: ShopScreenViewModel,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Box(
         modifier = modifier.fillMaxSize()
     ) {
-        StatusRow(uiState.shopStatus)
-
-        if (uiState.shopStatus == ShopStatus.DEFAULT) {
-            InfoBlock(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp))
-        }
-
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .align(Alignment.TopCenter)
+        ) {
+            if (uiState.shopStatus != ShopStatus.ORDER) {
+                StatusRow(uiState.shopStatus)
+            }
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(top = 24.dp, start = 16.dp, end = 16.dp),
@@ -190,17 +210,33 @@ fun MainData(
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.background)
         ) {
+            if (uiState.shopStatus != ShopStatus.ORDER) {
+                item(span = { GridItemSpan(2) }) {
+                    InfoBlock()
+                }
+            }
             items(uiState.items) { item ->
-                ListItem(item = item, viewModel = viewModel)
+                ListItem(item = item, viewModel = viewModel, uiState.shopStatus)
             }
         }
 
-        if (uiState.categories != null) {
-            CategoriesDialog(categories = uiState.categories, onDismissRequest = {
-                viewModel.obtainEvent(
-                    ShopScreenEvent.CloseCategories
-                )
-            })
+            if (uiState.categories != null) {
+                CategoriesDialog(categories = uiState.categories, onDismissRequest = {
+                    viewModel.obtainEvent(
+                        ShopScreenEvent.CloseCategories
+                    )
+                })
+            }
+        }
+
+        if (uiState.itemsInBasket > 0) {
+            CartButton(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .align(Alignment.BottomCenter),
+                onClick = { viewModel.obtainEvent(ShopScreenEvent.OnCartClicked) }
+            )
         }
     }
 }
@@ -278,6 +314,7 @@ fun CategoriesDialog(
 private fun ListItem(
     item: ShopItem,
     viewModel: ShopScreenViewModel,
+    shopStatus: ShopStatus,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -316,33 +353,11 @@ private fun ListItem(
                     contentDescription = "Image"
                 )
 
-                when {
-                    item.product.quantity == 0L -> {
-                        OutOfStockIcon(Modifier.padding(8.dp))
-                    }
-
-                    item.selectedQuantity.toLong() == item.product.quantity -> {
-                        LimitReachedIcon(
-                            item.selectedQuantity,
-                            item.product.itemId,
-                            viewModel,
-                            Modifier.padding(8.dp)
-                        )
-                    }
-
-                    item.selectedQuantity == 0 -> {
-                        NotSelectedIcon(item.product.itemId, viewModel, Modifier.padding(8.dp))
-                    }
-
-                    item.selectedQuantity > 0 && item.selectedQuantity < item.product.quantity -> {
-                        SelectedIcon(
-                            item.selectedQuantity,
-                            item.product.itemId,
-                            viewModel,
-                            Modifier.padding(8.dp)
-                        )
-                    }
-
+                if (shopStatus == ShopStatus.ORDER) {
+                    ShopItemStatus(
+                        item = item,
+                        viewModel = viewModel
+                    )
                 }
             }
 
@@ -364,30 +379,62 @@ private fun ListItem(
                     color = textColor,
                 )
             )
+
             val priceData = item.product.prices.first()
+            val textStyle = TextStyle(
+                fontSize = 12.sp,
+                lineHeight = 20.sp,
+                fontWeight = FontWeight(400),
+                color = textColor,
+            )
+
             Text(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 5.dp),
                 text = priceData.price.toString() + " " + priceData.currency,
-                style = TextStyle(
-                    fontSize = 12.sp,
-                    lineHeight = 20.sp,
-                    fontWeight = FontWeight(400),
-                    color = textColor,
-                ),
+                style = textStyle,
             )
             Text(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 5.dp),
                 text = "Stock: " + item.product.quantity.toString(),
-                style = TextStyle(
-                    fontSize = 12.sp,
-                    lineHeight = 20.sp,
-                    fontWeight = FontWeight(400),
-                    color = textColor,
-                ),
+                style = textStyle
+            )
+        }
+    }
+}
+
+@Composable
+private fun ShopItemStatus(
+    item: ShopItem,
+    viewModel: ShopScreenViewModel
+) {
+    when {
+        item.product.quantity == 0L -> {
+            OutOfStockIcon(Modifier.padding(8.dp))
+        }
+
+        item.selectedQuantity.toLong() == item.product.quantity -> {
+            LimitReachedIcon(
+                item.selectedQuantity,
+                item.product.itemId,
+                viewModel,
+                Modifier.padding(8.dp)
+            )
+        }
+
+        item.selectedQuantity == 0 -> {
+            NotSelectedIcon(item.product.itemId, viewModel, Modifier.padding(8.dp))
+        }
+
+        item.selectedQuantity > 0 && item.selectedQuantity < item.product.quantity -> {
+            SelectedIcon(
+                item.selectedQuantity,
+                item.product.itemId,
+                viewModel,
+                Modifier.padding(8.dp)
             )
         }
     }
@@ -395,18 +442,21 @@ private fun ListItem(
 
 @Composable
 fun StatusRow(shopStatus: ShopStatus, modifier: Modifier = Modifier) {
-    val rowBackground = when (shopStatus) {
-        ShopStatus.OPEN -> Color(0xFFE1F4E6)
-        ShopStatus.CLOSED -> Color(0xFFDAA7AD)
-        ShopStatus.ORDER -> Color(0xFFEADAAE)
-        ShopStatus.DEFAULT -> Color(0xFF7E7E7E)
+    val rowBackground = if (shopStatus == ShopStatus.OPEN) {
+        Color(0xFFFDF6E2)
+    } else {
+        Color(0xFFFDE7E8)
     }
-    val rowTextColor = when (shopStatus) {
-        ShopStatus.OPEN -> Color(0xFF109C42)
-        ShopStatus.CLOSED -> Color(0xFF4F0C14)
-        ShopStatus.ORDER -> Color(0xFF362B08)
-        ShopStatus.DEFAULT -> Color(0xFF000000)
+
+    val statusText = when (shopStatus) {
+        ShopStatus.OPEN -> "Open to browse"
+        ShopStatus.CLOSED -> "Closed"
+        ShopStatus.DEFAULT -> "Offline"
+        else -> ""
     }
+
+    val rowTextColor = Color(0xFFD40E14)
+
     Row(
         modifier = modifier
             .background(rowBackground)
@@ -416,7 +466,7 @@ fun StatusRow(shopStatus: ShopStatus, modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.Center
     ) {
         Text("Shop Status: ", color = rowTextColor)
-        Text(text = shopStatus.name, color = rowTextColor, fontWeight = FontWeight.Bold)
+        Text(text = statusText, color = rowTextColor, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -650,7 +700,7 @@ fun MenuSelector(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             items(items = menus, itemContent = { menu ->
-                ImmseatButton(
+                InseatButton(
                     text = menu.displayName.first().text,
                     onClick = { onMenuSelected.invoke(menu) }
                 )
@@ -679,4 +729,23 @@ fun InfoBlock(modifier: Modifier = Modifier) {
             )
         )
     }
+}
+
+@Composable
+fun CartButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
+    InseatButton(
+        modifier = modifier,
+        text = stringResource(R.string.shop_cart_button),
+        icon = {
+            Image(
+                modifier = Modifier
+                    .size(24.dp)
+                    .padding(end = 8.dp),
+                painter = painterResource(id = R.drawable.ic_cart_for_button),
+                contentDescription = "Cart Icon"
+            )
+        },
+        onClick = onClick
+    )
+
 }

@@ -10,6 +10,7 @@ import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import javax.inject.Inject
+import com.immflyretail.inseat.sdk.api.models.Environment
 
 @HiltAndroidApp
 class MainApplication : Application() {
@@ -29,7 +30,9 @@ class MainApplication : Application() {
             api.initialize(
                 applicationContext = this@MainApplication,
                 configuration = Configuration(
-                    apiKey = "put-your-api-key-here",
+                    apiKey = BuildConfig.API_KEY,
+                    supportedICAOs = listOf("WZZ", "WAZ"),
+                    environment = Environment.TEST,
                 )
             )
 

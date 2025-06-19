@@ -1,4 +1,5 @@
 import Modules.inseat
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -9,6 +10,13 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+val localProps = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        load(file.inputStream())
+    }
+}
+
 android {
     namespace = "com.immflyretail.inseat.sampleapp"
 
@@ -16,6 +24,7 @@ android {
         applicationId = "com.immflyretail.inseat.sampleapp"
         versionCode = libs.versions.versionCode.get().toInt()
         versionName = libs.versions.versionName.get()
+        buildConfigField("String", "API_KEY", "\"${localProps.getProperty("API_KEY", "")}\"")
     }
 
     buildTypes {

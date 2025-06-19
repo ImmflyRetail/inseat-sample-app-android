@@ -1,6 +1,7 @@
 package com.immflyretail.inseat.sampleapp.shop.presentation
 
 import androidx.lifecycle.ViewModel
+import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenContract
 import com.immflyretail.inseat.sampleapp.core.extension.runCoroutine
 import com.immflyretail.inseat.sdk.api.InseatException
 import com.immflyretail.inseat.sdk.api.models.DefaultShop
@@ -13,9 +14,7 @@ import com.immflyretail.inseat.sampleapp.shop.presentation.model.toShopStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
@@ -36,18 +35,20 @@ class ShopScreenViewModel @Inject constructor(
     private val _uiAction = Channel<ShopScreenActions>()
     val uiAction: Flow<ShopScreenActions> get() = _uiAction.receiveAsFlow()
 
-    private var selectedItems = mutableMapOf<Int, Int>()
+    private val selectedItems = mutableMapOf<Int, Int>()
     private var shopStatus = ShopStatus.DEFAULT
 
 
     init {
         runCoroutine {
             if (repository.isMenuSelected()) {
-                selectedItems = try {
-                    Json.decodeFromString<Map<Int, Int>>(repository.getBasketItemsJSON()).toMutableMap()
-                } catch (e: Exception) {
-                    mutableMapOf()
-                }
+                selectedItems.putAll(
+                    try {
+                        Json.decodeFromString<Map<Int, Int>>(repository.getBasketItemsJSON())
+                    } catch (e: Exception) {
+                        mutableMapOf()
+                    }
+                )
 
                 initShop()
             } else {
@@ -58,46 +59,43 @@ class ShopScreenViewModel @Inject constructor(
 
     fun obtainEvent(event: ShopScreenEvent) {
         when (event) {
-            is ShopScreenEvent.OnAddItemClicked -> {
+            is ShopScreenEvent.OnAddItemClicked -> runCoroutine {
                 uiState.value.increaseSelectedQuantity(event.itemId)
-                runCoroutine {
-                    repository.setBasketItemsJSON(Json.encodeToString(selectedItems))
-                    _uiAction.send(ShopScreenActions.Message("Item added to basket"))
-                }
             }
 
-            is ShopScreenEvent.OnRemoveItemClicked -> {
+            is ShopScreenEvent.OnRemoveItemClicked -> runCoroutine {
                 uiState.value.decreaseSelectedQuantity(event.itemId)
-                runCoroutine {
-                    repository.setBasketItemsJSON(Json.encodeToString(selectedItems))
-                    _uiAction.send(ShopScreenActions.Message("Item removed from basket"))
-                }
             }
 
-            is ShopScreenEvent.OnMenuSelected -> {
-                runCoroutine {
-                    repository.selectMenu(event.menu)
-                    initShop()
-                }
+
+            is ShopScreenEvent.OnMenuSelected -> runCoroutine {
+                repository.selectMenu(event.menu)
+                initShop()
             }
 
             is ShopScreenEvent.OnRefresh -> {
-                _uiState.value = (_uiState.value as ShopScreenState.DataLoaded).copy(isRefreshing = true)
+                _uiState.value =
+                    (_uiState.value as ShopScreenState.DataLoaded).copy(isRefreshing = true)
                 fetchData()
             }
 
-            ShopScreenEvent.ClickOnCategories -> {
-                runCoroutine {
-                    _uiState.value = (_uiState.value as ShopScreenState.DataLoaded).copy(categories = repository.fetchCategories())
-                }
+            ShopScreenEvent.ClickOnCategories -> runCoroutine {
+                _uiState.value =
+                    (_uiState.value as ShopScreenState.DataLoaded).copy(categories = repository.fetchCategories())
             }
+
             ShopScreenEvent.CloseCategories -> {
-                _uiState.value = (_uiState.value as ShopScreenState.DataLoaded).copy(categories = null)
+                _uiState.value =
+                    (_uiState.value as ShopScreenState.DataLoaded).copy(categories = null)
+            }
+
+            ShopScreenEvent.OnCartClicked -> runCoroutine {
+                _uiAction.send(ShopScreenActions.Navigate { navigate(BasketScreenContract.Route) })
             }
         }
     }
 
-    private suspend fun initShop(){
+    private suspend fun initShop() {
         if (repository.isAutoupdateEnabled()) {
             autoLoadData()
         } else {
@@ -116,7 +114,8 @@ class ShopScreenViewModel @Inject constructor(
                 shopStatus,
                 items,
                 isPullToRefreshEnabled = true,
-                isRefreshing = false
+                isRefreshing = false,
+                itemsInBasket = selectedItems.values.sumOf { it }
             )
         } catch (e: InseatException) {
             _uiState.value = ShopScreenState.Error(e.message ?: "Unknown error")
@@ -141,7 +140,8 @@ class ShopScreenViewModel @Inject constructor(
                     _uiState.value = ShopScreenState.DataLoaded(
                         shopStatus,
                         items,
-                        isPullToRefreshEnabled = false
+                        isPullToRefreshEnabled = false,
+                        itemsInBasket = selectedItems.values.sumOf { it }
                     )
                 }
                 .collect()
@@ -156,28 +156,35 @@ class ShopScreenViewModel @Inject constructor(
 
         val state = _uiState.value
         if (state is ShopScreenState.DataLoaded) {
-            _uiState.value = state.copy(shopStatus = shopStatus)
+            _uiState.value = state.copy(
+                shopStatus = shopStatus,
+                itemsInBasket = selectedItems.values.sumOf { it })
         }
     }
 
-    private fun ShopScreenState.increaseSelectedQuantity(itemId: Int) {
+    private suspend fun ShopScreenState.increaseSelectedQuantity(itemId: Int) {
         if (this !is ShopScreenState.DataLoaded) return
 
         val items = items.toMutableList()
         val updatedIndex = items.indexOfFirst { it.product.itemId == itemId }
+
         if (updatedIndex != -1) {
             val newQuantity = items[updatedIndex].selectedQuantity + 1
             items[updatedIndex] = items[updatedIndex].copy(selectedQuantity = newQuantity)
             selectedItems[itemId] = newQuantity
-            _uiState.value = this.copy(items = items)
+            _uiState.value =
+                this.copy(items = items, itemsInBasket = selectedItems.values.sumOf { it })
         }
+
+        repository.setBasketItemsJSON(Json.encodeToString(selectedItems))
     }
 
-    private fun ShopScreenState.decreaseSelectedQuantity(itemId: Int) {
+    private suspend fun ShopScreenState.decreaseSelectedQuantity(itemId: Int) {
         if (this !is ShopScreenState.DataLoaded) return
 
         val items = items.toMutableList()
         val updatedIndex = items.indexOfFirst { it.product.itemId == itemId }
+
         if (updatedIndex != -1) {
             val newQuantity = items[updatedIndex].selectedQuantity - 1
             items[updatedIndex] = items[updatedIndex].copy(selectedQuantity = newQuantity)
@@ -186,7 +193,10 @@ class ShopScreenViewModel @Inject constructor(
             } else {
                 selectedItems[itemId] = newQuantity
             }
-            _uiState.value = this.copy(items = items)
+            _uiState.value =
+                this.copy(items = items, itemsInBasket = selectedItems.values.sumOf { it })
         }
+
+        repository.setBasketItemsJSON(Json.encodeToString(selectedItems))
     }
 }
