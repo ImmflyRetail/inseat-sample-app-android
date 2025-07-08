@@ -5,7 +5,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.immflyretail.inseat.sampleapp.basket.presentation.basket.basketScreen
 import com.immflyretail.inseat.sampleapp.basket.presentation.checkout.checkoutScreen
-import com.immflyretail.inseat.sampleapp.orders.presentation.ordersScreen
+import com.immflyretail.inseat.sampleapp.orders.presentation.order.ordersScreen
+import com.immflyretail.inseat.sampleapp.orders.presentation.status.ordersStatusScreen
 import com.immflyretail.inseat.sampleapp.settings.presentation.settingsScreen
 import com.immflyretail.inseat.sampleapp.shop.presentation.shopScreen
 import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
@@ -20,6 +21,7 @@ fun NavigationHost() {
         basketScreen(navController)
         checkoutScreen(navController)
         ordersScreen(navController)
+        ordersStatusScreen(navController)
         settingsScreen(navController)
     }
 }

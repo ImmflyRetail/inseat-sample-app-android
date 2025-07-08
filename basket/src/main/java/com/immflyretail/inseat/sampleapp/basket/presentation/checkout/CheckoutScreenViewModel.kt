@@ -3,7 +3,6 @@ package com.immflyretail.inseat.sampleapp.basket.presentation.checkout
 import androidx.lifecycle.ViewModel
 import com.immflyretail.inseat.sampleapp.basket.data.CheckoutRepository
 import com.immflyretail.inseat.sampleapp.basket.presentation.basket.model.BasketItem
-import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenContract
 import com.immflyretail.inseat.sampleapp.core.extension.runCoroutine
 import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
 import com.immflyretail.inseat.sdk.api.InseatException
@@ -38,18 +37,18 @@ class CheckoutScreenViewModel @Inject constructor(
     }
 
     fun obtainEvent(event: CheckoutScreenEvent) {
-        val state = _uiState.value
-
-        if (state !is CheckoutScreenState.Data) return
-
         when (event) {
-            is CheckoutScreenEvent.OnMakeOrderClicked -> makeOrder(state)
+            is CheckoutScreenEvent.OnMakeOrderClicked -> {
+                makeOrder((uiState.value as CheckoutScreenState.Data))
+            }
 
             CheckoutScreenEvent.OnDetailsClicked -> {
+                val state = uiState.value as CheckoutScreenState.Data
                 _uiState.value = state.copy(isExpanded = !state.isExpanded)
             }
 
             is CheckoutScreenEvent.OnSeatNumberEntered -> {
+                val state = uiState.value as CheckoutScreenState.Data
                 _uiState.value = state.copy(seatNumber = event.seatNumber)
             }
 
@@ -96,6 +95,7 @@ class CheckoutScreenViewModel @Inject constructor(
                     updatedAt = createdTime,
                 )
             ) { result ->
+
                 runCoroutine {
                     result
                         .onSuccess {
@@ -103,6 +103,7 @@ class CheckoutScreenViewModel @Inject constructor(
                             _uiAction.send(CheckoutScreenActions.ShowDialog(isOrderSuccess = true))
                         }
                         .onFailure {
+                            _uiState.value = CheckoutScreenState.Error("Can't make order")
                             _uiAction.send(CheckoutScreenActions.ShowDialog(isOrderSuccess = false))
                         }
                 }

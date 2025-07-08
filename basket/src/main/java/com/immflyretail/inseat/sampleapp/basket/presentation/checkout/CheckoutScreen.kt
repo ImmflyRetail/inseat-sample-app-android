@@ -1,6 +1,6 @@
 package com.immflyretail.inseat.sampleapp.basket.presentation.checkout
 
-import androidx.compose.foundation.Image
+import  androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -53,6 +52,13 @@ import com.immflyretail.inseat.sampleapp.basket.presentation.basket.model.Basket
 import com.immflyretail.inseat.sampleapp.core.extension.execute
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
 import com.immflyretail.inseat.sampleapp.ui.InseatButton
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_16_24
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_18
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_18_26
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14_22
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16_24
 import com.immflyretail.inseat.sampleapp.ui.Loading
 import com.immflyretail.inseat.sampleapp.ui.Screen
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
@@ -71,7 +77,6 @@ fun NavGraphBuilder.checkoutScreen(navController: NavController) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CheckoutScreen(
     uiState: CheckoutScreenState,
@@ -86,7 +91,6 @@ private fun CheckoutScreen(
     ) {
         var showBottomSheet by remember { mutableStateOf(false) }
         var isOrderSuccess by remember { mutableStateOf(false) }
-//        val sheetState = rememberModalBottomSheetState()
 
         when (uiState) {
             is CheckoutScreenState.Data -> ContentScreen(
@@ -190,7 +194,9 @@ private fun ContentScreen(
             text = stringResource(R.string.order_now),
             onClick = { onMakeOrderClicked.invoke() },
             isEnabled = isSeatNumberValid,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
         )
     }
 }
@@ -210,13 +216,9 @@ private fun ExpandedSummary(
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Text(
-            text = "Summary",
-            style = TextStyle(
-                fontSize = 18.sp,
-                lineHeight = 26.sp,
-                fontWeight = FontWeight(600),
-                color = Color(0xFF333333),
-            )
+            text = stringResource(R.string.summary),
+            style = B_18_26,
+            color = Color(0xFF333333),
         )
 
         items.forEach {
@@ -240,24 +242,16 @@ private fun ExpandedSummary(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = "Total",
-                style = TextStyle(
-                    fontSize = 18.sp,
-                    lineHeight = 18.sp,
-                    fontWeight = FontWeight(600),
-                    color = Color(0xFF333333),
-                )
+                text = stringResource(R.string.total),
+                style = B_18,
+                color = Color(0xFF333333),
             )
 
             Text(
                 text = "${total.toPlainString()} $currency",
-                style = TextStyle(
-                    fontSize = 18.sp,
-                    lineHeight = 18.sp,
-                    fontWeight = FontWeight(600),
-                    color = Color(0xFF333333),
-                    textAlign = TextAlign.Right,
-                )
+                style = B_18,
+                color = Color(0xFF333333),
+                textAlign = TextAlign.Right,
             )
         }
 
@@ -270,14 +264,10 @@ private fun ExpandedSummary(
         ) {
 
             Text(
-                text = "Hide order details",
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    lineHeight = 14.sp,
-                    fontWeight = FontWeight(400),
-                    color = Color(0xFFDD083A),
-                    textDecoration = TextDecoration.Underline,
-                )
+                text = stringResource(R.string.hide_order_details),
+                style = N_14,
+                color = Color(0xFFDD083A),
+                textDecoration = TextDecoration.Underline,
             )
 
             Image(
@@ -310,25 +300,17 @@ private fun CollapsedSummary(
         ) {
 
             Text(
-                text = "${items.size} items for",
-                style = TextStyle(
-                    fontSize = 16.sp,
-                    lineHeight = 24.sp,
-                    fontWeight = FontWeight(400),
-                    color = Color(0xFF333333),
-                )
+                text = stringResource(R.string.items_for, items.size),
+                style = N_16_24,
+                color = Color(0xFF333333),
             )
 
             Text(
                 modifier = Modifier.padding(start = 8.dp),
                 text = "${total.toPlainString()} $currency",
-                style = TextStyle(
-                    fontSize = 16.sp,
-                    lineHeight = 24.sp,
-                    fontWeight = FontWeight(600),
-                    color = Color(0xFF333333),
-                    textAlign = TextAlign.Right,
-                )
+                style = B_16_24,
+                color = Color(0xFF333333),
+                textAlign = TextAlign.Right,
             )
         }
 
@@ -346,14 +328,10 @@ private fun CollapsedSummary(
         ) {
 
             Text(
-                text = "View order details",
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    lineHeight = 14.sp,
-                    fontWeight = FontWeight(400),
-                    color = Color(0xFFDD083A),
-                    textDecoration = TextDecoration.Underline,
-                )
+                text = stringResource(R.string.view_order_details),
+                style = N_14,
+                color = Color(0xFFDD083A),
+                textDecoration = TextDecoration.Underline,
             )
 
             Image(
@@ -378,13 +356,9 @@ private fun ProductItem(
     ) {
         Text(
             text = "${item.quantity}x",
-            style = TextStyle(
-                fontSize = 14.sp,
-                lineHeight = 14.sp,
-                fontWeight = FontWeight(600),
-                color = Color(0xFF333333),
-                textAlign = TextAlign.Center,
-            )
+            style = B_14,
+            color = Color(0xFF333333),
+            textAlign = TextAlign.Center,
         )
 
         Text(
@@ -393,25 +367,17 @@ private fun ProductItem(
                 .weight(1f)
                 .fillMaxWidth(),
             text = item.product.name,
-            style = TextStyle(
-                fontSize = 14.sp,
-                lineHeight = 22.sp,
-                fontWeight = FontWeight(400),
-                color = Color(0xFF333333),
-                textAlign = TextAlign.Start,
-            )
+            style = N_14_22,
+            color = Color(0xFF333333),
+            textAlign = TextAlign.Start,
         )
 
         val price = item.product.prices.first()
         Text(
             text = "${price.price.toPlainString()} ${price.currency}",
-            style = TextStyle(
-                fontSize = 14.sp,
-                lineHeight = 14.sp,
-                fontWeight = FontWeight(600),
-                color = Color(0xFF333333),
-                textAlign = TextAlign.End,
-            )
+            style = B_14,
+            color = Color(0xFF333333),
+            textAlign = TextAlign.End,
         )
     }
 }
@@ -434,13 +400,9 @@ fun EnterDetailsBlock(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Enter your details",
-            style = TextStyle(
-                fontSize = 18.sp,
-                lineHeight = 26.sp,
-                fontWeight = FontWeight(600),
-                color = Color(0xFF333333),
-            )
+            text = stringResource(R.string.enter_your_details),
+            style = B_18_26,
+            color = Color(0xFF333333),
         )
 
         OutlinedTextField(
@@ -451,13 +413,9 @@ fun EnterDetailsBlock(
             onValueChange = { onSeatNumberEntered.invoke(it) },
             label = {
                 Text(
-                    text = "What’s your seat number?",
-                    style = TextStyle(
-                        fontSize = 14.sp,
-                        lineHeight = 22.sp,
-                        fontWeight = FontWeight(400),
-                        color = Color(0xFF666666),
-                    )
+                    text = stringResource(R.string.what_s_your_seat_number),
+                    style = N_14_22,
+                    color = Color(0xFF666666),
                 )
             },
             singleLine = true,
@@ -499,13 +457,9 @@ fun InfoBlock(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "You’ll pay your order to a crew member when they deliver it to you.",
-            style = TextStyle(
-                fontSize = 16.sp,
-                lineHeight = 24.sp,
-                fontWeight = FontWeight(400),
-                color = Color(0xFF333333),
-            )
+            text = stringResource(R.string.you_ll_pay_your_order_to_a_crew_member_when_they_deliver_it_to_you),
+            style = N_16_24,
+            color = Color(0xFF333333),
         )
     }
 }

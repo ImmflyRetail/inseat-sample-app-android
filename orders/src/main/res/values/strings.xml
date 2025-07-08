@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="order_status_title">Order status</string>
+    <string name="seat_number">Seat number</string>
+    <string name="details">Details</string>
+    <string name="order_id">Order ID</string>
+    <string name="total">Total</string>
+    <string name="order_status_your_order_s_in">Your order’s in!</string>
+    <string name="order_status_order_placed">Placed</string>
+    <string name="order_status_in_preparation">In preparation</string>
+    <string name="order_status_delivered">Delivered</string>
+    <string name="order_status_your_order_will_be_ready_soon">Delivery expected in 10 minutes.</string>
+    <string name="order_status_cansellation_title">"Order prep hasn’t begun. You can still cancel your order. "</string>
+    <string name="order_status_cancel_order">Cancel order</string>
+    <string name="my_orders">My orders</string>
+    <string name="order_placed">Order placed</string>
+    <string name="delivered">Delivered</string>
+    <string name="in_preparation">In preparation</string>
+    <string name="cancelled">Cancelled</string>
+    <string name="hide_order_details">Hide order details</string>
+    <string name="items_for">%1$s items for</string>
+    <string name="view_order_details">View order details</string>
+</resources>

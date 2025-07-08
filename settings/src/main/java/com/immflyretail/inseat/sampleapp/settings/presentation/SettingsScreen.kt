@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,62 +32,50 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenContract
-import com.immflyretail.inseat.sampleapp.ui.BottomNavItem
-import com.immflyretail.inseat.sampleapp.ui.BottomNavigationBar
+import com.immflyretail.inseat.sampleapp.core.extension.execute
+import com.immflyretail.inseat.sampleapp.settings.R
+import com.immflyretail.inseat.sampleapp.settings_api.SettingsScreenContract
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_12
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16_24
 import com.immflyretail.inseat.sampleapp.ui.Loading
 import com.immflyretail.inseat.sampleapp.ui.Screen
-import com.immflyretail.inseat.sampleapp.orders_api.OrdersScreenContract
-import com.immflyretail.inseat.sampleapp.settings_api.SettingsScreenContract
-import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
+import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
 
 fun NavGraphBuilder.settingsScreen(navController: NavController) {
     composable<SettingsScreenContract.Route> {
         val viewModel: SettingsScreenViewModel = hiltViewModel()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-        SettingsScreen(
-            uiState = uiState,
-            onBottomNavSelected = { item ->
-                when (item) {
-                    BottomNavItem.Cart -> navController.navigate(BasketScreenContract.Route)
-                    BottomNavItem.Shop -> navController.navigate(ShopScreenContract.Route)
-                    BottomNavItem.MyOrders -> navController.navigate(OrdersScreenContract.Route)
-                    BottomNavItem.Settings -> {}
-                }
-            },
-            onAutoRefreshEnabled = {
-                viewModel.obtainEvent(SettingsScreenEvent.OnAutoRefreshEnabled)
-            },
-            onManualRefreshEnabled = {
-                viewModel.obtainEvent(SettingsScreenEvent.OnManualRefreshEnabled)
-            }
-        )
+        SettingsScreen(uiState, viewModel, navController)
     }
 }
 
 @Composable
 private fun SettingsScreen(
     uiState: SettingsScreenState,
-    onBottomNavSelected: (BottomNavItem) -> Unit,
-    onAutoRefreshEnabled: () -> Unit,
-    onManualRefreshEnabled: () -> Unit,
+    viewModel: SettingsScreenViewModel,
+    navController: NavController,
     modifier: Modifier = Modifier
 ) {
     Screen(
         modifier = modifier,
-        title = "Settings",
-        bottomNavigation = { BottomNavigationBar { item -> onBottomNavSelected.invoke(item) } }
+        title = stringResource(R.string.settings),
+        onBackClicked = { viewModel.obtainEvent(SettingsScreenEvent.OnBackClicked) },
     ) {
 
         when (uiState) {
             is SettingsScreenState.DataLoaded -> ContentScreen(
                 uiState = uiState,
-                onAutoRefreshEnabled = { onAutoRefreshEnabled.invoke() },
-                onManualRefreshEnabled = { onManualRefreshEnabled.invoke() },
+                eventReceiver = viewModel::obtainEvent,
             )
 
             SettingsScreenState.Loading -> Loading()
+        }
+    }
+
+    SingleEventEffect(viewModel.uiAction) { action ->
+        when (action) {
+            is SettingsScreenAction.Navigate -> navController.execute(action.lambda)
         }
     }
 }
@@ -94,8 +83,7 @@ private fun SettingsScreen(
 @Composable
 private fun ContentScreen(
     uiState: SettingsScreenState.DataLoaded,
-    onAutoRefreshEnabled: () -> Unit,
-    onManualRefreshEnabled: () -> Unit,
+    eventReceiver: (SettingsScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -119,13 +107,9 @@ private fun ContentScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Data refresh type:",
-                    style = TextStyle(
-                        fontSize = 16.sp,
-                        lineHeight = 24.sp,
-                        fontWeight = FontWeight(400),
-                        color = Color(0xFF333333),
-                    )
+                    text = stringResource(R.string.data_refresh_type),
+                    style = N_16_24,
+                    color = Color(0xFF333333),
                 )
 
                 val selectedBackground = Color(0xFFDD083A)
@@ -145,7 +129,7 @@ private fun ContentScreen(
                             .fillMaxHeight()
                             .width(60.dp)
                             .clip(RoundedCornerShape(32.dp))
-                            .clickable { onAutoRefreshEnabled.invoke() }
+                            .clickable { eventReceiver(SettingsScreenEvent.OnAutoRefreshEnabled) }
                             .background(
                                 if (uiState.isAutoRefreshEnabled) {
                                     selectedBackground
@@ -156,17 +140,13 @@ private fun ContentScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Auto",
-                            style = TextStyle(
-                                fontSize = 12.sp,
-                                lineHeight = 12.sp,
-                                fontWeight = FontWeight(400),
-                                color = if (uiState.isAutoRefreshEnabled) {
-                                    selectedText
-                                } else {
-                                    unselectedText
-                                },
-                            )
+                            text = stringResource(R.string.auto),
+                            style = N_12,
+                            color = if (uiState.isAutoRefreshEnabled) {
+                                selectedText
+                            } else {
+                                unselectedText
+                            },
                         )
                     }
                     Box(
@@ -174,7 +154,7 @@ private fun ContentScreen(
                             .fillMaxHeight()
                             .width(60.dp)
                             .clip(RoundedCornerShape(32.dp))
-                            .clickable { onManualRefreshEnabled.invoke() }
+                            .clickable { eventReceiver(SettingsScreenEvent.OnManualRefreshEnabled) }
                             .background(
                                 if (uiState.isAutoRefreshEnabled) {
                                     unselectedBackground
@@ -185,17 +165,13 @@ private fun ContentScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Manual",
-                            style = TextStyle(
-                                fontSize = 12.sp,
-                                lineHeight = 12.sp,
-                                fontWeight = FontWeight(400),
-                                color = if (uiState.isAutoRefreshEnabled) {
-                                    unselectedText
-                                } else {
-                                    selectedText
-                                },
-                            )
+                            text = stringResource(R.string.manual),
+                            style = N_12,
+                            color = if (uiState.isAutoRefreshEnabled) {
+                                unselectedText
+                            } else {
+                                selectedText
+                            },
                         )
                     }
                 }

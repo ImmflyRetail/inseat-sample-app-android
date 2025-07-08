@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -51,9 +52,15 @@ import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenContract
 import com.immflyretail.inseat.sampleapp.core.extension.execute
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
 import com.immflyretail.inseat.sampleapp.ui.InseatButton
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14_22
 import com.immflyretail.inseat.sampleapp.ui.Loading
 import com.immflyretail.inseat.sampleapp.ui.Screen
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_16
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_18_26
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_22_30
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_10
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_12_20
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
 import java.math.BigDecimal
 
@@ -119,13 +126,9 @@ private fun ContentScreen(
         ) {
             Text(
                 modifier = Modifier.padding(top = 24.dp, bottom = 16.dp),
-                text = "Summary",
-                style = TextStyle(
-                    fontSize = 22.sp,
-                    lineHeight = 30.sp,
-                    fontWeight = FontWeight(600),
-                    color = Color(0xFF333333),
-                )
+                text = stringResource(R.string.summary),
+                style = B_22_30,
+                color = Color(0xFF333333)
             )
 
             LazyColumn(
@@ -244,12 +247,8 @@ private fun ListItem(
                             .padding(bottom = 8.dp)
                             .wrapContentWidth(),
                         text = item.product.name,
-                        style = TextStyle(
-                            fontSize = 14.sp,
-                            lineHeight = 22.sp,
-                            fontWeight = FontWeight(600),
-                            color = Color(0xFF333333),
-                        )
+                        style = B_14_22,
+                        color = Color(0xFF333333),
                     )
 
                     when {
@@ -275,12 +274,8 @@ private fun ListItem(
                         .padding(bottom = 30.dp)
                         .align(Alignment.CenterEnd),
                     text = priceData.price.toString() + " " + priceData.currency,
-                    style = TextStyle(
-                        fontSize = 12.sp,
-                        lineHeight = 20.sp,
-                        fontWeight = FontWeight(400),
-                        color = Color(0xFF333333),
-                    ),
+                    style = N_12_20,
+                    color = Color(0xFF333333),
                 )
             }
         }
@@ -315,13 +310,9 @@ fun NormalIcon(
         )
         Text(
             text = selectedQuantity.toString(),
-            style = TextStyle(
-                fontSize = 14.sp,
-                lineHeight = 14.sp,
-                fontWeight = FontWeight(600),
-                color = Color(0xFF333333),
-                textAlign = TextAlign.Center,
-            )
+            style = B_14,
+            color = Color(0xFF333333),
+            textAlign = TextAlign.Center,
         )
         Image(
             modifier = Modifier
@@ -367,13 +358,9 @@ fun LimitReachedIcon(
             )
             Text(
                 text = selectedQuantity.toString(),
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    lineHeight = 14.sp,
-                    fontWeight = FontWeight(600),
-                    color = Color(0xFF333333),
-                    textAlign = TextAlign.Center,
-                )
+                style = B_14,
+                color = Color(0xFF333333),
+                textAlign = TextAlign.Center,
             )
             Image(
                 modifier = Modifier
@@ -394,14 +381,10 @@ fun LimitReachedIcon(
         ) {
             Text(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                text = "Limit reached",
-                style = TextStyle(
-                    fontSize = 10.sp,
-                    lineHeight = 10.sp,
-                    fontWeight = FontWeight(400),
-                    color = Color(0xFFD40E14),
-                    textAlign = TextAlign.Center,
-                )
+                text = stringResource(R.string.limit_reached),
+                style = N_10,
+                color = Color(0xFFD40E14),
+                textAlign = TextAlign.Center,
             )
         }
     }
@@ -434,23 +417,15 @@ fun SummaryBlock(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Total",
-                style = TextStyle(
-                    fontSize = 18.sp,
-                    lineHeight = 26.sp,
-                    fontWeight = FontWeight(600),
-                    color = Color(0xFF333333),
-                )
+                text = stringResource(R.string.total),
+                style = B_18_26,
+                color = Color(0xFF333333),
             )
             Text(
                 text = total.toPlainString() + " " + currency,
-                style = TextStyle(
-                    fontSize = 18.sp,
-                    lineHeight = 26.sp,
-                    fontWeight = FontWeight(600),
-                    color = Color(0xFF333333),
-                    textAlign = TextAlign.Right,
-                )
+                style = B_18_26,
+                color = Color(0xFF333333),
+                textAlign = TextAlign.Right,
             )
         }
         Spacer(Modifier.height(80.dp))
