@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenContract
 import com.immflyretail.inseat.sampleapp.core.extension.runCoroutine
 import com.immflyretail.inseat.sampleapp.orders_api.OrdersScreenContract
+import com.immflyretail.inseat.sampleapp.product_api.ProductScreenContract
 import com.immflyretail.inseat.sampleapp.settings_api.SettingsScreenContract
 import com.immflyretail.inseat.sdk.api.InseatException
 import com.immflyretail.inseat.sdk.api.models.DefaultShop
@@ -43,23 +44,29 @@ class ShopScreenViewModel @Inject constructor(
     private var shopStatus = ShopStatus.DEFAULT
     private var ordersCount = 0
     private var categories: List<Category> = emptyList()
+    private var selectedCategory: Category? = null
     private var allProducts: List<ShopItem> = emptyList()
 
     init {
         runCoroutine {
             if (repository.isMenuSelected()) {
-                selectedItems.putAll(
-                    try {
-                        Json.decodeFromString<Map<Int, Int>>(repository.getBasketItemsJSON())
-                    } catch (e: Exception) {
-                        mutableMapOf()
-                    }
-                )
+                refreshSelectedItems()
                 initShop()
             } else {
                 _uiState.value = ShopScreenState.SelectMenu(repository.getAvailableMenus())
             }
         }
+    }
+
+    private suspend fun refreshSelectedItems() {
+        selectedItems.clear()
+        selectedItems.putAll(
+            try {
+                Json.decodeFromString<Map<Int, Int>>(repository.getBasketItemsJSON())
+            } catch (e: Exception) {
+                mutableMapOf()
+            }
+        )
     }
 
     fun obtainEvent(event: ShopScreenEvent) {
@@ -71,7 +78,6 @@ class ShopScreenViewModel @Inject constructor(
             is ShopScreenEvent.OnRemoveItemClicked -> runCoroutine {
                 uiState.value.decreaseSelectedQuantity(event.itemId)
             }
-
 
             is ShopScreenEvent.OnMenuSelected -> runCoroutine {
                 repository.selectMenu(event.menu)
@@ -109,9 +115,10 @@ class ShopScreenViewModel @Inject constructor(
 
             is ShopScreenEvent.OnCategorySelected -> {
                 val currentState = _uiState.value as? ShopScreenState.DataLoaded ?: return
+                selectedCategory = event.category
                 _uiState.value = currentState.copy(
                     selectedTabIndex = event.selectedTabIndex,
-                    items = getItemsByCategory(event.category),
+                    items = getItemsByCategory(selectedCategory),
                 )
             }
 
@@ -132,11 +139,49 @@ class ShopScreenViewModel @Inject constructor(
                         searchResult = emptyList(),
                         isSearchEnabled = false
                     )
-                } else{
+                } else {
                     _uiAction.send(ShopScreenActions.Navigate { popBackStack() })
                 }
             }
 
+            is ShopScreenEvent.OnProductClicked -> runCoroutine {
+                _uiAction.send(ShopScreenActions.Navigate {
+                    navigate(ProductScreenContract.Route(event.itemId))
+                })
+            }
+
+            is ShopScreenEvent.OnProductUpdated -> {
+                when (event.selectedAmount) {
+                    0, -1 -> selectedItems.remove(event.productId)
+                    else -> selectedItems[event.productId] = event.selectedAmount
+                }
+
+                (uiState.value as? ShopScreenState.DataLoaded)?.let { state ->
+                    val updatedIndex = allProducts.indexOfFirst { it.product.itemId == event.productId }
+                    val updatedItems = allProducts.toMutableList()
+                    updatedItems[updatedIndex] = updatedItems[updatedIndex].copy(selectedQuantity = event.selectedAmount)
+                    allProducts = updatedItems
+
+                    _uiState.value = state.copy(
+                        itemsInBasket = getItemsInBasketCount(),
+                        items = getItemsByCategory(selectedCategory)
+                    )
+                }
+            }
+
+            ShopScreenEvent.ItemInBasketUpdated -> runCoroutine {
+                refreshSelectedItems()
+                allProducts = allProducts.map {
+                    ShopItem(product = it.product, selectedItems.getOrDefault(it.product.itemId, 0))
+                }
+
+                (uiState.value as? ShopScreenState.DataLoaded)?.let { state ->
+                    _uiState.value = state.copy(
+                        itemsInBasket = getItemsInBasketCount(),
+                        items = getItemsByCategory(selectedCategory)
+                    )
+                }
+            }
         }
     }
 
@@ -169,14 +214,16 @@ class ShopScreenViewModel @Inject constructor(
                 .filter { getItemsByCategory(it).isNotEmpty() }
                 .sortedBy { it.sortOrder }
 
+            selectedCategory = categories.firstOrNull()
+
             _uiState.value = ShopScreenState.DataLoaded(
                 shopStatus,
-                items = getItemsByCategory(categories.firstOrNull()),
+                items = getItemsByCategory(selectedCategory),
                 categories = categories,
                 ordersCount = ordersCount,
                 isPullToRefreshEnabled = true,
                 isRefreshing = false,
-                itemsInBasket = selectedItems.values.sumOf { it }
+                itemsInBasket = getItemsInBasketCount()
             )
         } catch (e: InseatException) {
             _uiState.value = ShopScreenState.Error(e.message ?: "Unknown error")
@@ -219,14 +266,15 @@ class ShopScreenViewModel @Inject constructor(
                         categories = categoryDef.await()
                             .filter { getItemsByCategory(it).isNotEmpty() }
                             .sortedBy { it.sortOrder }
+                        selectedCategory = categories.firstOrNull()
                     }
 
                     _uiState.value = ShopScreenState.DataLoaded(
                         shopStatus,
                         categories = categories,
-                        items = getItemsByCategory(categories.firstOrNull()),
+                        items = getItemsByCategory(selectedCategory),
                         isPullToRefreshEnabled = false,
-                        itemsInBasket = selectedItems.values.sumOf { it },
+                        itemsInBasket = getItemsInBasketCount(),
                         ordersCount = ordersCount
                     )
                 }
@@ -245,7 +293,8 @@ class ShopScreenViewModel @Inject constructor(
             _uiState.value = state.copy(
                 ordersCount = ordersCount,
                 shopStatus = shopStatus,
-                itemsInBasket = selectedItems.values.sumOf { it })
+                itemsInBasket = getItemsInBasketCount()
+            )
         }
     }
 
@@ -259,8 +308,7 @@ class ShopScreenViewModel @Inject constructor(
             val newQuantity = items[updatedIndex].selectedQuantity + 1
             items[updatedIndex] = items[updatedIndex].copy(selectedQuantity = newQuantity)
             selectedItems[itemId] = newQuantity
-            _uiState.value =
-                this.copy(items = items, itemsInBasket = selectedItems.values.sumOf { it })
+            _uiState.value = this.copy(items = items, itemsInBasket = getItemsInBasketCount())
         }
 
         repository.setBasketItemsJSON(Json.encodeToString(selectedItems))
@@ -280,10 +328,13 @@ class ShopScreenViewModel @Inject constructor(
             } else {
                 selectedItems[itemId] = newQuantity
             }
-            _uiState.value =
-                this.copy(items = items, itemsInBasket = selectedItems.values.sumOf { it })
+            _uiState.value = this.copy(items = items, itemsInBasket = getItemsInBasketCount())
         }
 
         repository.setBasketItemsJSON(Json.encodeToString(selectedItems))
+    }
+
+    private fun getItemsInBasketCount(): Int {
+        return selectedItems.values.sumOf { it }
     }
 }

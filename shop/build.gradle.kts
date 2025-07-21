@@ -26,6 +26,7 @@ dependencies {
     implementation(project(Modules.basket_api))
     implementation(project(Modules.orders_api))
     implementation(project(Modules.settings_api))
+    implementation(project(Modules.product_api))
     api(project(Modules.shop_api))
 
     implementation(libs.inseat)
@@ -41,6 +42,5 @@ dependencies {
 
     // DI
     implementation(libs.hilt)
-    debugImplementation(libs.androidx.ui.tooling)
     ksp(libs.hilt.android.compiler)
 }

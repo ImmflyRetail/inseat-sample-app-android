@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="confirm_button">Confirm</string>
+    <string name="limit_reached">Limit reached</string>
+    <string name="total">Total</string>
+    <string name="summary">Summary</string>
+    <string name="items_for">%1$s items for</string>
+    <string name="view_order_details">View order details</string>
+    <string name="enter_your_details">Enter your details</string>
+    <string name="what_s_your_seat_number">What’s your seat number?</string>
+    <string name="shop_has_not_opened_yet">The store is not open yet! keep in mind that prices and stock may change when the store officially opens.</string>
+    <string name="hide_order_details">Hide order details</string>
+    <string name="out_of_stock">Out of stock</string>
+</resources>

@@ -2,6 +2,7 @@ package com.immflyretail.inseat.sampleapp.basket.presentation.basket
 
 import android.graphics.BitmapFactory
 import android.util.Base64
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,11 +37,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -54,13 +52,13 @@ import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
 import com.immflyretail.inseat.sampleapp.ui.InseatButton
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14_22
-import com.immflyretail.inseat.sampleapp.ui.Loading
-import com.immflyretail.inseat.sampleapp.ui.Screen
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_16
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_18_26
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_22_30
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_10
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_12_20
+import com.immflyretail.inseat.sampleapp.ui.Loading
+import com.immflyretail.inseat.sampleapp.ui.Screen
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
 import java.math.BigDecimal
 
@@ -89,7 +87,6 @@ private fun BasketScreen(
         title = "Shopping cart",
         onBackClicked = { viewModel.obtainEvent(BasketScreenEvent.OnBackClicked) },
     ) {
-
         when (uiState) {
             is BasketScreenState.DataLoaded -> ContentScreen(uiState, viewModel)
 
@@ -102,6 +99,8 @@ private fun BasketScreen(
                 is BasketScreenActions.Navigate -> navController.execute(action.lambda)
             }
         }
+
+        BackHandler { viewModel.obtainEvent(BasketScreenEvent.OnBackClicked) }
     }
 }
 
@@ -138,11 +137,7 @@ private fun ContentScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(items = uiState.items, itemContent = { item ->
-                    ListItem(
-                        item = item,
-                        onAddClicked = {viewModel.obtainEvent(BasketScreenEvent.OnAddItemClicked(it))},
-                        onRemoveClicked = {viewModel.obtainEvent(BasketScreenEvent.OnRemoveItemClicked(it))}
-                    )
+                    ListItem(item = item, eventReceiver = viewModel::obtainEvent,)
                 })
                 item {
                     SummaryBlock(uiState.total, uiState.currency)
@@ -184,7 +179,6 @@ private fun ContentScreen(
                 onClick = { viewModel.obtainEvent(BasketScreenEvent.OnCheckoutClicked) },
                 isEnabled = uiState.items.isNotEmpty()
             )
-
         }
     }
 }
@@ -192,15 +186,15 @@ private fun ContentScreen(
 @Composable
 private fun ListItem(
     item: BasketItem,
-    onAddClicked: (Int) -> Unit,
-    onRemoveClicked: (Int) -> Unit,
+    eventReceiver: (BasketScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
             .height(106.dp)
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
+            .clickable { eventReceiver(BasketScreenEvent.OnItemClicked(item.product.itemId)) },
     ) {
         Row(
             modifier = Modifier
@@ -255,14 +249,13 @@ private fun ListItem(
                         item.quantity.toLong() == item.product.quantity -> LimitReachedIcon(
                             selectedQuantity = item.quantity,
                             itemId = item.product.itemId,
-                            onRemoveClicked
+                            eventReceiver = eventReceiver,
                         )
 
                         item.quantity > 0 -> NormalIcon(
                             selectedQuantity = item.quantity,
                             itemId = item.product.itemId,
-                            onAddClicked,
-                            onRemoveClicked
+                            eventReceiver = eventReceiver,
                         )
                     }
                 }
@@ -286,8 +279,7 @@ private fun ListItem(
 fun NormalIcon(
     selectedQuantity: Int,
     itemId: Int,
-    onAddClicked: (Int) -> Unit,
-    onRemoveClicked: (Int) -> Unit,
+    eventReceiver: (BasketScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -304,7 +296,7 @@ fun NormalIcon(
                 .padding(start = 6.dp)
                 .width(13.dp)
                 .height(14.dp)
-                .clickable { onRemoveClicked.invoke(itemId) },
+                .clickable { eventReceiver(BasketScreenEvent.OnRemoveItemClicked(itemId)) },
             painter = painterResource(id = R.drawable.ic_remove),
             contentDescription = "Not selected"
         )
@@ -318,7 +310,7 @@ fun NormalIcon(
             modifier = Modifier
                 .padding(end = 6.dp)
                 .size(12.dp)
-                .clickable { onAddClicked.invoke(itemId) },
+                .clickable { eventReceiver(BasketScreenEvent.OnAddItemClicked(itemId)) },
             painter = painterResource(id = R.drawable.ic_plus),
             contentDescription = "Not selected"
         )
@@ -329,7 +321,7 @@ fun NormalIcon(
 fun LimitReachedIcon(
     selectedQuantity: Int,
     itemId: Int,
-    onRemoveClicked: (Int) -> Unit,
+    eventReceiver: (BasketScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -352,7 +344,7 @@ fun LimitReachedIcon(
                     .padding(start = 6.dp)
                     .width(13.dp)
                     .height(14.dp)
-                    .clickable { onRemoveClicked.invoke(itemId) },
+                    .clickable { eventReceiver(BasketScreenEvent.OnRemoveItemClicked(itemId)) },
                 painter = painterResource(id = R.drawable.ic_remove),
                 contentDescription = "Not selected"
             )

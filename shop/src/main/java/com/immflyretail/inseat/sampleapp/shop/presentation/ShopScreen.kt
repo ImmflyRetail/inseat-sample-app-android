@@ -62,7 +62,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenResultKey
 import com.immflyretail.inseat.sampleapp.core.extension.execute
+import com.immflyretail.inseat.sampleapp.product_api.ProductScreenResultKey
+import com.immflyretail.inseat.sampleapp.product_api.ProductScreenResult
 import com.immflyretail.inseat.sampleapp.shop.R
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopItem
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopStatus
@@ -175,6 +178,32 @@ fun ShopScreen(
         }
 
         BackHandler { viewModel.obtainEvent(ShopScreenEvent.OnBackClicked) }
+
+        val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle!!
+        val productUpdatesObserver = savedStateHandle.getStateFlow(
+            ProductScreenResultKey.REFRESHED_PRODUCT.name,
+            ProductScreenResult()
+        )
+        val basketUpdatesObserver = savedStateHandle.getStateFlow(
+            BasketScreenResultKey.PRODUCTS_IN_BASKET_REFRESHED.name,
+            initialValue = false
+        )
+
+        SingleEventEffect(productUpdatesObserver) { result ->
+            if (result.productId != -1) {
+                viewModel.obtainEvent(
+                    ShopScreenEvent.OnProductUpdated(result.productId, result.selectedAmount)
+                )
+                savedStateHandle.remove<ProductScreenResult>(ProductScreenResultKey.REFRESHED_PRODUCT.name)
+            }
+        }
+
+        SingleEventEffect(basketUpdatesObserver) { result ->
+            if (result == true) {
+                viewModel.obtainEvent(ShopScreenEvent.ItemInBasketUpdated)
+                savedStateHandle.remove<Boolean>(BasketScreenResultKey.PRODUCTS_IN_BASKET_REFRESHED.name)
+            }
+        }
     }
 }
 
@@ -539,7 +568,8 @@ private fun ListItem(
         modifier = modifier
             .fillMaxWidth()
             .height(228.dp)
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
+            .clickable { eventReceiver(ShopScreenEvent.OnProductClicked(item.product.itemId)) },
     ) {
         Column(
             modifier = Modifier

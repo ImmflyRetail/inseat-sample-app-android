@@ -4,6 +4,7 @@ import com.immflyretail.inseat.sdk.api.models.Category
 import com.immflyretail.inseat.sdk.api.models.Menu
 
 sealed interface ShopScreenEvent {
+    data class OnProductClicked(val itemId: Int) : ShopScreenEvent
     data class OnAddItemClicked(val itemId: Int) : ShopScreenEvent
     data class OnRemoveItemClicked(val itemId: Int) : ShopScreenEvent
     data class OnMenuSelected(val menu: Menu) : ShopScreenEvent
@@ -14,5 +15,7 @@ sealed interface ShopScreenEvent {
     data object OnCartClicked : ShopScreenEvent
     data object OnOrdersClicked : ShopScreenEvent
     data object OnSearchClicked : ShopScreenEvent
+    data object ItemInBasketUpdated : ShopScreenEvent
     data class OnSearch(val query: String) : ShopScreenEvent
+    data class OnProductUpdated(val productId: Int, val selectedAmount: Int) : ShopScreenEvent
 }
