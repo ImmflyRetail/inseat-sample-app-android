@@ -5,8 +5,5 @@ import kotlinx.serialization.Serializable
 object OrdersScreenContract {
 
     @Serializable
-    data object OrdersListRoute
-
-    @Serializable
-    data class OrderStatusRoute(val orderId: String)
+    data object Route
 }

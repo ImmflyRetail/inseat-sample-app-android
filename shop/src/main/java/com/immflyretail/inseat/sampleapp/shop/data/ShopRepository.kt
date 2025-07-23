@@ -10,9 +10,7 @@ import com.immflyretail.inseat.sdk.api.models.Menu
 import com.immflyretail.inseat.sdk.api.models.Product
 import com.immflyretail.inseat.sdk.api.models.ShopInfo
 import com.immflyretail.inseat.sdk.api.models.UserData
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -22,7 +20,6 @@ interface ShopRepository {
     suspend fun fetchShop(): ShopInfo
     suspend fun fetchProducts(): List<Product>
     suspend fun fetchCategories(): List<Category>
-    suspend fun fetchOrderCount(): Flow<Int>
     suspend fun getBasketItemsJSON(): String
     suspend fun setBasketItemsJSON(json: String)
     suspend fun selectMenu(menu: Menu)
@@ -79,9 +76,5 @@ internal class ListRepositoryImpl @Inject constructor(
 
     override suspend fun fetchCategories(): List<Category> = withContext(dispatchersProvider.getIO()) {
         inseatApi.fetchCategories()
-    }
-
-    override suspend fun fetchOrderCount(): Flow<Int> = withContext(dispatchersProvider.getIO()) {
-        inseatApi.observeOrders().map { orders -> orders.size }
     }
 }

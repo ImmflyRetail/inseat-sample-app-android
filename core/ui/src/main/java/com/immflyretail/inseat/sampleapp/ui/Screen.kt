@@ -24,7 +24,7 @@ fun Screen(
     modifier: Modifier = Modifier,
     title: String,
     toolbarItem: @Composable () -> Unit = {},
-    customToolbar: (@Composable () -> Unit)? = null,
+    bottomNavigation: @Composable () -> Unit = {},
     isBackButtonEnabled: Boolean = true,
     onBackClicked: () -> Unit = {},
     content: @Composable () -> Unit = {}
@@ -36,7 +36,7 @@ fun Screen(
                     .fillMaxWidth()
                     .height(60.dp)
                     .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(16.dp),
             ) {
                 if (isBackButtonEnabled) {
                     Image(
@@ -49,26 +49,22 @@ fun Screen(
                         contentDescription = null
                     )
                 }
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.Center),
+                    text = title,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleLarge
+                )
 
-                if (customToolbar != null) {
-                    customToolbar()
-                } else {
-                    Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.Center),
-                        text = title,
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.titleLarge
-                    )
-
-                    Box(modifier = Modifier.align(Alignment.CenterEnd)) {
-                        toolbarItem()
-                    }
+                Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                    toolbarItem()
                 }
             }
         },
-        modifier = modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize(),
+        bottomBar = bottomNavigation
     ) { padding ->
         Box(
             modifier = Modifier

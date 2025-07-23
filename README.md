@@ -19,7 +19,7 @@ How to run the project
 2. Add to your module's `build.gradle.kts` file the following code:
    ```kotlin
    dependencies {
-       implementation("com.immflyretail.inseat:sdk:0.1.3")
+       implementation("com.immflyretail.inseat.sdk:inseat:0.1.2")
    }
    ```
 

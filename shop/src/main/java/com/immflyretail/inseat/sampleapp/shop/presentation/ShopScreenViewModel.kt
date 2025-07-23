@@ -3,9 +3,6 @@ package com.immflyretail.inseat.sampleapp.shop.presentation
 import androidx.lifecycle.ViewModel
 import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenContract
 import com.immflyretail.inseat.sampleapp.core.extension.runCoroutine
-import com.immflyretail.inseat.sampleapp.orders_api.OrdersScreenContract
-import com.immflyretail.inseat.sampleapp.product_api.ProductScreenContract
-import com.immflyretail.inseat.sampleapp.settings_api.SettingsScreenContract
 import com.immflyretail.inseat.sdk.api.InseatException
 import com.immflyretail.inseat.sdk.api.models.DefaultShop
 import com.immflyretail.inseat.sdk.api.models.Shop
@@ -14,9 +11,7 @@ import com.immflyretail.inseat.sampleapp.shop.data.ShopRepository
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopItem
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopStatus
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.toShopStatus
-import com.immflyretail.inseat.sdk.api.models.Category
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,31 +37,24 @@ class ShopScreenViewModel @Inject constructor(
 
     private val selectedItems = mutableMapOf<Int, Int>()
     private var shopStatus = ShopStatus.DEFAULT
-    private var ordersCount = 0
-    private var categories: List<Category> = emptyList()
-    private var selectedCategory: Category? = null
-    private var allProducts: List<ShopItem> = emptyList()
+
 
     init {
         runCoroutine {
             if (repository.isMenuSelected()) {
-                refreshSelectedItems()
+                selectedItems.putAll(
+                    try {
+                        Json.decodeFromString<Map<Int, Int>>(repository.getBasketItemsJSON())
+                    } catch (e: Exception) {
+                        mutableMapOf()
+                    }
+                )
+
                 initShop()
             } else {
                 _uiState.value = ShopScreenState.SelectMenu(repository.getAvailableMenus())
             }
         }
-    }
-
-    private suspend fun refreshSelectedItems() {
-        selectedItems.clear()
-        selectedItems.putAll(
-            try {
-                Json.decodeFromString<Map<Int, Int>>(repository.getBasketItemsJSON())
-            } catch (e: Exception) {
-                mutableMapOf()
-            }
-        )
     }
 
     fun obtainEvent(event: ShopScreenEvent) {
@@ -79,6 +67,7 @@ class ShopScreenViewModel @Inject constructor(
                 uiState.value.decreaseSelectedQuantity(event.itemId)
             }
 
+
             is ShopScreenEvent.OnMenuSelected -> runCoroutine {
                 repository.selectMenu(event.menu)
                 initShop()
@@ -90,106 +79,20 @@ class ShopScreenViewModel @Inject constructor(
                 fetchData()
             }
 
+            ShopScreenEvent.ClickOnCategories -> runCoroutine {
+                _uiState.value =
+                    (_uiState.value as ShopScreenState.DataLoaded).copy(categories = repository.fetchCategories())
+            }
+
+            ShopScreenEvent.CloseCategories -> {
+                _uiState.value =
+                    (_uiState.value as ShopScreenState.DataLoaded).copy(categories = null)
+            }
+
             ShopScreenEvent.OnCartClicked -> runCoroutine {
                 _uiAction.send(ShopScreenActions.Navigate { navigate(BasketScreenContract.Route) })
             }
-
-            ShopScreenEvent.OnOrdersClicked -> runCoroutine {
-                _uiAction.send(ShopScreenActions.Navigate { navigate(OrdersScreenContract.OrdersListRoute) })
-            }
-
-            ShopScreenEvent.OnSettingsClicked -> runCoroutine {
-                _uiAction.send(ShopScreenActions.Navigate { navigate(SettingsScreenContract.Route) })
-            }
-
-            ShopScreenEvent.OnSearchClicked -> runCoroutine {
-                (_uiState.value as? ShopScreenState.DataLoaded)?.let { currentState ->
-                    _uiState.value = currentState.copy(
-                        isSearchEnabled = true,
-                        searchQuery = "",
-                        searchResult = emptyList()
-                    )
-                }
-                _uiAction.send(ShopScreenActions.MoveFocusToSearch)
-            }
-
-            is ShopScreenEvent.OnCategorySelected -> {
-                val currentState = _uiState.value as? ShopScreenState.DataLoaded ?: return
-                selectedCategory = event.category
-                _uiState.value = currentState.copy(
-                    selectedTabIndex = event.selectedTabIndex,
-                    items = getItemsByCategory(selectedCategory),
-                )
-            }
-
-            is ShopScreenEvent.OnSearch -> {
-                _uiState.value = (_uiState.value as? ShopScreenState.DataLoaded)?.copy(
-                    searchQuery = event.query,
-                    searchResult = allProducts.filter {
-                        it.product.name.contains(event.query, ignoreCase = true)
-                    }
-                ) ?: return
-            }
-
-            ShopScreenEvent.OnBackClicked -> runCoroutine {
-                val dataState = uiState.value as? ShopScreenState.DataLoaded
-                if (dataState?.isSearchEnabled == true) {
-                    _uiState.value = dataState.copy(
-                        searchQuery = "",
-                        searchResult = emptyList(),
-                        isSearchEnabled = false
-                    )
-                } else {
-                    _uiAction.send(ShopScreenActions.Navigate { popBackStack() })
-                }
-            }
-
-            is ShopScreenEvent.OnProductClicked -> runCoroutine {
-                _uiAction.send(ShopScreenActions.Navigate {
-                    navigate(ProductScreenContract.Route(event.itemId))
-                })
-            }
-
-            is ShopScreenEvent.OnProductUpdated -> {
-                when (event.selectedAmount) {
-                    0, -1 -> selectedItems.remove(event.productId)
-                    else -> selectedItems[event.productId] = event.selectedAmount
-                }
-
-                (uiState.value as? ShopScreenState.DataLoaded)?.let { state ->
-                    val updatedIndex = allProducts.indexOfFirst { it.product.itemId == event.productId }
-                    val updatedItems = allProducts.toMutableList()
-                    updatedItems[updatedIndex] = updatedItems[updatedIndex].copy(selectedQuantity = event.selectedAmount)
-                    allProducts = updatedItems
-
-                    _uiState.value = state.copy(
-                        itemsInBasket = getItemsInBasketCount(),
-                        items = getItemsByCategory(selectedCategory)
-                    )
-                }
-            }
-
-            ShopScreenEvent.ItemInBasketUpdated -> runCoroutine {
-                refreshSelectedItems()
-                allProducts = allProducts.map {
-                    ShopItem(product = it.product, selectedItems.getOrDefault(it.product.itemId, 0))
-                }
-
-                (uiState.value as? ShopScreenState.DataLoaded)?.let { state ->
-                    _uiState.value = state.copy(
-                        itemsInBasket = getItemsInBasketCount(),
-                        items = getItemsByCategory(selectedCategory)
-                    )
-                }
-            }
         }
-    }
-
-    private fun getItemsByCategory(category: Category?): List<ShopItem> {
-        if (category == null) {
-            return allProducts
-        }
-        return allProducts.filter { it.product.categoryId == category.id || category.subcategories.any { subcategory -> subcategory.id == it.product.categoryId } }
     }
 
     private suspend fun initShop() {
@@ -203,27 +106,16 @@ class ShopScreenViewModel @Inject constructor(
     private fun fetchData() = runCoroutine {
         _uiState.value = ShopScreenState.Loading
 
-        val categoryDef = async { repository.fetchCategories() }
-
         try {
             updateShopStatus(repository.fetchShop())
             val items = repository.fetchProducts()
                 .map { ShopItem(product = it, selectedItems.getOrDefault(it.itemId, 0)) }
-            allProducts = items
-            categories = categoryDef.await()
-                .filter { getItemsByCategory(it).isNotEmpty() }
-                .sortedBy { it.sortOrder }
-
-            selectedCategory = categories.firstOrNull()
-
             _uiState.value = ShopScreenState.DataLoaded(
                 shopStatus,
-                items = getItemsByCategory(selectedCategory),
-                categories = categories,
-                ordersCount = ordersCount,
+                items,
                 isPullToRefreshEnabled = true,
                 isRefreshing = false,
-                itemsInBasket = getItemsInBasketCount()
+                itemsInBasket = selectedItems.values.sumOf { it }
             )
         } catch (e: InseatException) {
             _uiState.value = ShopScreenState.Error(e.message ?: "Unknown error")
@@ -233,23 +125,9 @@ class ShopScreenViewModel @Inject constructor(
     private fun autoLoadData() = runCoroutine {
         _uiState.value = ShopScreenState.Loading
 
-        val categoryDef = async { repository.fetchCategories() }
-
         launch {
             repository.getShopObserver()
                 .onEach { shopInfo -> updateShopStatus(shopInfo) }
-                .collect()
-        }
-
-        launch {
-            repository.fetchOrderCount()
-                .onEach {
-                    ordersCount = it
-                    if (_uiState.value is ShopScreenState.DataLoaded) {
-                        _uiState.value =
-                            (_uiState.value as ShopScreenState.DataLoaded).copy(ordersCount = ordersCount)
-                    }
-                }
                 .collect()
         }
 
@@ -259,23 +137,11 @@ class ShopScreenViewModel @Inject constructor(
                     itemDTO.map { ShopItem(product = it, selectedItems.getOrDefault(it.itemId, 0)) }
                 }
                 .onEach { items ->
-                    allProducts = items
-
-                    // set categories only once, because items count and categories can't change during runtime
-                    if (categories.isEmpty()) {
-                        categories = categoryDef.await()
-                            .filter { getItemsByCategory(it).isNotEmpty() }
-                            .sortedBy { it.sortOrder }
-                        selectedCategory = categories.firstOrNull()
-                    }
-
                     _uiState.value = ShopScreenState.DataLoaded(
                         shopStatus,
-                        categories = categories,
-                        items = getItemsByCategory(selectedCategory),
+                        items,
                         isPullToRefreshEnabled = false,
-                        itemsInBasket = getItemsInBasketCount(),
-                        ordersCount = ordersCount
+                        itemsInBasket = selectedItems.values.sumOf { it }
                     )
                 }
                 .collect()
@@ -291,10 +157,8 @@ class ShopScreenViewModel @Inject constructor(
         val state = _uiState.value
         if (state is ShopScreenState.DataLoaded) {
             _uiState.value = state.copy(
-                ordersCount = ordersCount,
                 shopStatus = shopStatus,
-                itemsInBasket = getItemsInBasketCount()
-            )
+                itemsInBasket = selectedItems.values.sumOf { it })
         }
     }
 
@@ -308,7 +172,8 @@ class ShopScreenViewModel @Inject constructor(
             val newQuantity = items[updatedIndex].selectedQuantity + 1
             items[updatedIndex] = items[updatedIndex].copy(selectedQuantity = newQuantity)
             selectedItems[itemId] = newQuantity
-            _uiState.value = this.copy(items = items, itemsInBasket = getItemsInBasketCount())
+            _uiState.value =
+                this.copy(items = items, itemsInBasket = selectedItems.values.sumOf { it })
         }
 
         repository.setBasketItemsJSON(Json.encodeToString(selectedItems))
@@ -328,13 +193,10 @@ class ShopScreenViewModel @Inject constructor(
             } else {
                 selectedItems[itemId] = newQuantity
             }
-            _uiState.value = this.copy(items = items, itemsInBasket = getItemsInBasketCount())
+            _uiState.value =
+                this.copy(items = items, itemsInBasket = selectedItems.values.sumOf { it })
         }
 
         repository.setBasketItemsJSON(Json.encodeToString(selectedItems))
-    }
-
-    private fun getItemsInBasketCount(): Int {
-        return selectedItems.values.sumOf { it }
     }
 }

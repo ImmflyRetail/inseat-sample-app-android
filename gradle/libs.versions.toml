@@ -1,10 +1,10 @@
 [versions]
 #Global
 compileSdk = "35"
-minSdk = "24"
+minSdk = "26"
 targetSdk = "33"
-versionCode = "3"
-versionName = "1.0.3"
+versionCode = "2"
+versionName = "1.0.2"
 
 #Core
 agp = "8.5.1"
@@ -33,7 +33,8 @@ navigation = "2.8.9"
 timber = "5.0.1"
 kotlinxSerialization = "1.8.0"
 uiTextGoogleFonts = "1.7.8"
-inseat = "0.1.4"
+uiTooling = "1.7.8"
+inseat = "0.10.15-debug"
 
 [libraries]
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
@@ -68,6 +69,7 @@ navigation = { group = "androidx.navigation", name = "navigation-fragment-ktx", 
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 hilt = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-android-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "uiTooling" }
 
 [plugins]
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

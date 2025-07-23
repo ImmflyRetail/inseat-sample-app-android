@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.library)
     alias(libs.plugins.android)
-    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -9,7 +8,6 @@ android {
 
     buildFeatures {
         viewBinding = true
-        compose = true
     }
 }
 
@@ -17,5 +15,4 @@ dependencies {
     implementation(libs.coreKtx)
     implementation(libs.fragmentKtx)
     implementation(libs.navigation)
-    implementation(libs.bundles.compose)
 }

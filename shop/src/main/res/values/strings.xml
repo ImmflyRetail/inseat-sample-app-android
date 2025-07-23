@@ -5,16 +5,4 @@
     <string name="empty_list_message">List is empty</string>
     <string name="shop_cart_button">View cart</string>
     <string name="shop">Shop</string>
-    <string name="shop_screen_my_orders_count">My orders (%1$s)</string>
-    <string name="categories">Categories</string>
-    <string name="stock">"Stock: "</string>
-    <string name="out_of_stock">Out of stock</string>
-    <string name="limit_reached">Limit reached</string>
-    <string name="menu_selection">Menu selection</string>
-    <string name="choose_which_menu_you_want_to_view_based_on_your_preferences">Choose which menu you want to view based on your preferences.</string>
-    <string name="the_store_is_not_open_yet">The store is not open yet! Feel free to explore the available products, but keep in mind that prices and stock may change when the store officially opens.</string>
-    <string name="search">Search</string>
-    <string name="search_results">%1$d results</string>
-    <string name="no_result_found">No results found</string>
-    <string name="no_result_found_description">Looks like we don’t have what you’re looking for.</string>
 </resources>

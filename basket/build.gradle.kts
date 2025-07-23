@@ -25,8 +25,6 @@ dependencies {
     implementation(project(Modules.shop_api))
     implementation(project(Modules.orders_api))
     implementation(project(Modules.settings_api))
-    implementation(project(Modules.checkout_api))
-    implementation(project(Modules.product_api))
 
     api(project(Modules.basket_api))
 

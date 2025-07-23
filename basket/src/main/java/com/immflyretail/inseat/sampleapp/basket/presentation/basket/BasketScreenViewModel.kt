@@ -3,10 +3,8 @@ package com.immflyretail.inseat.sampleapp.basket.presentation.basket
 import androidx.lifecycle.ViewModel
 import com.immflyretail.inseat.sampleapp.basket.data.BasketRepository
 import com.immflyretail.inseat.sampleapp.basket.presentation.basket.model.BasketItem
-import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenResultKey
-import com.immflyretail.inseat.sampleapp.checkout_api.CheckoutScreenContract
+import com.immflyretail.inseat.sampleapp.basket.presentation.checkout.CheckoutScreenContract
 import com.immflyretail.inseat.sampleapp.core.extension.runCoroutine
-import com.immflyretail.inseat.sampleapp.product_api.ProductScreenContract
 import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
 import com.immflyretail.inseat.sdk.api.InseatException
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,7 +29,6 @@ class BasketScreenViewModel @Inject constructor(
     val uiAction: Flow<BasketScreenActions> get() = _uiAction.receiveAsFlow()
 
     private var selectedItems = mutableMapOf<Int, Int>()
-    private var selectedItemsInitValue = mutableMapOf<Int, Int>()
 
     init {
         loadData()
@@ -56,25 +53,11 @@ class BasketScreenViewModel @Inject constructor(
             }
 
             BasketScreenEvent.OnBackClicked -> runCoroutine {
-                _uiAction.send(BasketScreenActions.Navigate {
-                    if (selectedItemsInitValue != selectedItems) {
-                        previousBackStackEntry?.savedStateHandle?.set(
-                            BasketScreenResultKey.PRODUCTS_IN_BASKET_REFRESHED.name, true
-                        )
-                    }
-
-                    popBackStack()
-                })
+                _uiAction.send(BasketScreenActions.Navigate { popBackStack() })
             }
 
             BasketScreenEvent.OnCheckoutClicked -> runCoroutine {
                 _uiAction.send(BasketScreenActions.Navigate { navigate(CheckoutScreenContract.Route) })
-            }
-
-            is BasketScreenEvent.OnItemClicked -> runCoroutine {
-                _uiAction.send(
-                    BasketScreenActions.Navigate { navigate(ProductScreenContract.Route(event.itemId)) }
-                )
             }
         }
     }
@@ -82,13 +65,12 @@ class BasketScreenViewModel @Inject constructor(
     private fun loadData() = runCoroutine {
         _uiState.value = BasketScreenState.Loading
 
-        selectedItemsInitValue = try {
+        selectedItems = try {
             Json.decodeFromString<Map<Int, Int>>(repository.getBasketItemsJSON()).toMutableMap()
         } catch (e: Exception) {
             mutableMapOf()
         }
 
-        selectedItems = selectedItemsInitValue.toMutableMap()
         if (selectedItems.isEmpty()) {
             _uiState.value = BasketScreenState.DataLoaded(
                 items = emptyList(),

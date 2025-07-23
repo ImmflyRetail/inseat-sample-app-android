@@ -2,7 +2,6 @@ package com.immflyretail.inseat.sampleapp.basket.presentation.basket
 
 import android.graphics.BitmapFactory
 import android.util.Base64
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,9 +35,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -50,15 +51,9 @@ import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenContract
 import com.immflyretail.inseat.sampleapp.core.extension.execute
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
 import com.immflyretail.inseat.sampleapp.ui.InseatButton
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14_22
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_16
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_18_26
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_22_30
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_10
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_12_20
 import com.immflyretail.inseat.sampleapp.ui.Loading
 import com.immflyretail.inseat.sampleapp.ui.Screen
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_16
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
 import java.math.BigDecimal
 
@@ -87,6 +82,7 @@ private fun BasketScreen(
         title = "Shopping cart",
         onBackClicked = { viewModel.obtainEvent(BasketScreenEvent.OnBackClicked) },
     ) {
+
         when (uiState) {
             is BasketScreenState.DataLoaded -> ContentScreen(uiState, viewModel)
 
@@ -99,8 +95,6 @@ private fun BasketScreen(
                 is BasketScreenActions.Navigate -> navController.execute(action.lambda)
             }
         }
-
-        BackHandler { viewModel.obtainEvent(BasketScreenEvent.OnBackClicked) }
     }
 }
 
@@ -125,9 +119,13 @@ private fun ContentScreen(
         ) {
             Text(
                 modifier = Modifier.padding(top = 24.dp, bottom = 16.dp),
-                text = stringResource(R.string.summary),
-                style = B_22_30,
-                color = Color(0xFF333333)
+                text = "Summary",
+                style = TextStyle(
+                    fontSize = 22.sp,
+                    lineHeight = 30.sp,
+                    fontWeight = FontWeight(600),
+                    color = Color(0xFF333333),
+                )
             )
 
             LazyColumn(
@@ -137,7 +135,11 @@ private fun ContentScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(items = uiState.items, itemContent = { item ->
-                    ListItem(item = item, eventReceiver = viewModel::obtainEvent,)
+                    ListItem(
+                        item = item,
+                        onAddClicked = {viewModel.obtainEvent(BasketScreenEvent.OnAddItemClicked(it))},
+                        onRemoveClicked = {viewModel.obtainEvent(BasketScreenEvent.OnRemoveItemClicked(it))}
+                    )
                 })
                 item {
                     SummaryBlock(uiState.total, uiState.currency)
@@ -179,6 +181,7 @@ private fun ContentScreen(
                 onClick = { viewModel.obtainEvent(BasketScreenEvent.OnCheckoutClicked) },
                 isEnabled = uiState.items.isNotEmpty()
             )
+
         }
     }
 }
@@ -186,15 +189,15 @@ private fun ContentScreen(
 @Composable
 private fun ListItem(
     item: BasketItem,
-    eventReceiver: (BasketScreenEvent) -> Unit,
+    onAddClicked: (Int) -> Unit,
+    onRemoveClicked: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
             .height(106.dp)
-            .background(MaterialTheme.colorScheme.background)
-            .clickable { eventReceiver(BasketScreenEvent.OnItemClicked(item.product.itemId)) },
+            .background(MaterialTheme.colorScheme.background),
     ) {
         Row(
             modifier = Modifier
@@ -241,21 +244,26 @@ private fun ListItem(
                             .padding(bottom = 8.dp)
                             .wrapContentWidth(),
                         text = item.product.name,
-                        style = B_14_22,
-                        color = Color(0xFF333333),
+                        style = TextStyle(
+                            fontSize = 14.sp,
+                            lineHeight = 22.sp,
+                            fontWeight = FontWeight(600),
+                            color = Color(0xFF333333),
+                        )
                     )
 
                     when {
                         item.quantity.toLong() == item.product.quantity -> LimitReachedIcon(
                             selectedQuantity = item.quantity,
                             itemId = item.product.itemId,
-                            eventReceiver = eventReceiver,
+                            onRemoveClicked
                         )
 
                         item.quantity > 0 -> NormalIcon(
                             selectedQuantity = item.quantity,
                             itemId = item.product.itemId,
-                            eventReceiver = eventReceiver,
+                            onAddClicked,
+                            onRemoveClicked
                         )
                     }
                 }
@@ -267,8 +275,12 @@ private fun ListItem(
                         .padding(bottom = 30.dp)
                         .align(Alignment.CenterEnd),
                     text = priceData.price.toString() + " " + priceData.currency,
-                    style = N_12_20,
-                    color = Color(0xFF333333),
+                    style = TextStyle(
+                        fontSize = 12.sp,
+                        lineHeight = 20.sp,
+                        fontWeight = FontWeight(400),
+                        color = Color(0xFF333333),
+                    ),
                 )
             }
         }
@@ -279,7 +291,8 @@ private fun ListItem(
 fun NormalIcon(
     selectedQuantity: Int,
     itemId: Int,
-    eventReceiver: (BasketScreenEvent) -> Unit,
+    onAddClicked: (Int) -> Unit,
+    onRemoveClicked: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -296,21 +309,25 @@ fun NormalIcon(
                 .padding(start = 6.dp)
                 .width(13.dp)
                 .height(14.dp)
-                .clickable { eventReceiver(BasketScreenEvent.OnRemoveItemClicked(itemId)) },
+                .clickable { onRemoveClicked.invoke(itemId) },
             painter = painterResource(id = R.drawable.ic_remove),
             contentDescription = "Not selected"
         )
         Text(
             text = selectedQuantity.toString(),
-            style = B_14,
-            color = Color(0xFF333333),
-            textAlign = TextAlign.Center,
+            style = TextStyle(
+                fontSize = 14.sp,
+                lineHeight = 14.sp,
+                fontWeight = FontWeight(600),
+                color = Color(0xFF333333),
+                textAlign = TextAlign.Center,
+            )
         )
         Image(
             modifier = Modifier
                 .padding(end = 6.dp)
                 .size(12.dp)
-                .clickable { eventReceiver(BasketScreenEvent.OnAddItemClicked(itemId)) },
+                .clickable { onAddClicked.invoke(itemId) },
             painter = painterResource(id = R.drawable.ic_plus),
             contentDescription = "Not selected"
         )
@@ -321,7 +338,7 @@ fun NormalIcon(
 fun LimitReachedIcon(
     selectedQuantity: Int,
     itemId: Int,
-    eventReceiver: (BasketScreenEvent) -> Unit,
+    onRemoveClicked: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -344,15 +361,19 @@ fun LimitReachedIcon(
                     .padding(start = 6.dp)
                     .width(13.dp)
                     .height(14.dp)
-                    .clickable { eventReceiver(BasketScreenEvent.OnRemoveItemClicked(itemId)) },
+                    .clickable { onRemoveClicked.invoke(itemId) },
                 painter = painterResource(id = R.drawable.ic_remove),
                 contentDescription = "Not selected"
             )
             Text(
                 text = selectedQuantity.toString(),
-                style = B_14,
-                color = Color(0xFF333333),
-                textAlign = TextAlign.Center,
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    lineHeight = 14.sp,
+                    fontWeight = FontWeight(600),
+                    color = Color(0xFF333333),
+                    textAlign = TextAlign.Center,
+                )
             )
             Image(
                 modifier = Modifier
@@ -373,10 +394,14 @@ fun LimitReachedIcon(
         ) {
             Text(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                text = stringResource(R.string.limit_reached),
-                style = N_10,
-                color = Color(0xFFD40E14),
-                textAlign = TextAlign.Center,
+                text = "Limit reached",
+                style = TextStyle(
+                    fontSize = 10.sp,
+                    lineHeight = 10.sp,
+                    fontWeight = FontWeight(400),
+                    color = Color(0xFFD40E14),
+                    textAlign = TextAlign.Center,
+                )
             )
         }
     }
@@ -409,15 +434,23 @@ fun SummaryBlock(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = stringResource(R.string.total),
-                style = B_18_26,
-                color = Color(0xFF333333),
+                text = "Total",
+                style = TextStyle(
+                    fontSize = 18.sp,
+                    lineHeight = 26.sp,
+                    fontWeight = FontWeight(600),
+                    color = Color(0xFF333333),
+                )
             )
             Text(
                 text = total.toPlainString() + " " + currency,
-                style = B_18_26,
-                color = Color(0xFF333333),
-                textAlign = TextAlign.Right,
+                style = TextStyle(
+                    fontSize = 18.sp,
+                    lineHeight = 26.sp,
+                    fontWeight = FontWeight(600),
+                    color = Color(0xFF333333),
+                    textAlign = TextAlign.Right,
+                )
             )
         }
         Spacer(Modifier.height(80.dp))

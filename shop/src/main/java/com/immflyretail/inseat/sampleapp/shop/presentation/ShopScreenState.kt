@@ -14,12 +14,7 @@ sealed interface ShopScreenState {
         val items: List<ShopItem>,
         val isPullToRefreshEnabled: Boolean,
         val isRefreshing: Boolean = false,
-        val selectedTabIndex: Int = 0,
-        val categories: List<Category> = emptyList(),
+        val categories: List<Category>? = null,
         val itemsInBasket: Int = 0,
-        val ordersCount: Int,
-        val isSearchEnabled: Boolean = false,
-        val searchQuery: String = "",
-        val searchResult: List<ShopItem> = emptyList(),
     ) : ShopScreenState
 }

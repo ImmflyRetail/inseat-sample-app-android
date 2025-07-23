@@ -9,9 +9,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_16
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun InseatButton(
@@ -37,9 +39,13 @@ fun InseatButton(
         icon()
         Text(
             text = text,
-            style = B_16,
-            color = Color(0xFFFFFFFF),
-            textAlign = TextAlign.Center,
+            style = TextStyle(
+                fontSize = 16.sp,
+                lineHeight = 16.sp,
+                fontWeight = FontWeight(600),
+                color = Color(0xFFFFFFFF),
+                textAlign = TextAlign.Center,
+            )
         )
     }
 }
