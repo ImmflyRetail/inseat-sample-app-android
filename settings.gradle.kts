@@ -28,7 +28,7 @@ dependencyResolutionManagement {
         mavenCentral()
         // Debug repository for local development
         maven {
-            url = uri("http://192.168.1.66/")
+            url = uri("${localProps.getProperty("LOCAL_DEBUG_SERVER", "")}")
             isAllowInsecureProtocol = true
         }
         maven {
@@ -60,3 +60,7 @@ include(":settings")
 include(":settings_api")
 include(":shop")
 include(":shop_api")
+include(":product_api")
+include(":product")
+include(":checkout_api")
+include(":checkout")

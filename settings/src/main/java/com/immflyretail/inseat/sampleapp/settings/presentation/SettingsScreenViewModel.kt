@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import com.immflyretail.inseat.sampleapp.core.extension.runCoroutine
 import com.immflyretail.inseat.sampleapp.settings.data.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import javax.inject.Inject
 
 @HiltViewModel
@@ -15,6 +18,9 @@ class SettingsScreenViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow<SettingsScreenState>(SettingsScreenState.Loading)
     val uiState: StateFlow<SettingsScreenState> get() = _uiState
+
+    private val _uiAction = Channel<SettingsScreenAction>()
+    val uiAction: Flow<SettingsScreenAction> get() = _uiAction.receiveAsFlow()
 
     init {
         loadData()
@@ -35,6 +41,9 @@ class SettingsScreenViewModel @Inject constructor(
                 repository.setAutoRefreshState(false)
                 _uiState.value = state.copy(isAutoRefreshEnabled = false)
 
+            }
+            SettingsScreenEvent.OnBackClicked -> runCoroutine {
+                _uiAction.send(SettingsScreenAction.Navigate { popBackStack() })
             }
         }
     }

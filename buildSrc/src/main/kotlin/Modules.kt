@@ -18,6 +18,10 @@ object Modules {
     const val settings_api = ":settings_api"
     const val orders = ":orders"
     const val orders_api = ":orders_api"
+    const val product = ":product"
+    const val product_api = ":product_api"
+    const val checkout = ":checkout"
+    const val checkout_api = ":checkout_api"
 
     // sdk
     const val inseat = ":inseat"
