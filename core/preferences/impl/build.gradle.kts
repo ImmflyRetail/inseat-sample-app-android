@@ -1,5 +1,3 @@
-
-
 plugins {
     alias(libs.plugins.library)
     alias(libs.plugins.android)
@@ -34,10 +32,8 @@ dependencies {
 
     // Libs
     implementation(libs.coreKtx)
-    implementation(libs.timber)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.gson)
-    implementation(libs.androidx.security.crypto)
 
     // DI
     implementation(libs.hilt)

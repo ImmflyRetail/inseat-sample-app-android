@@ -10,6 +10,8 @@ sealed interface CheckoutScreenState {
         val currency: String,
         val seatNumber: String = "",
         val isExpanded: Boolean = false,
+        val savings: BigDecimal,
+        val enteredPromotionId: String = ""
     ) : CheckoutScreenState
 
     data class Error(val message: String) : CheckoutScreenState

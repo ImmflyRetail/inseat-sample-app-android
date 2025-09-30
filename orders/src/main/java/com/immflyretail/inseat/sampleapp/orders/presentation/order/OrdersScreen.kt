@@ -519,6 +519,12 @@ fun OrderStatus(status: OrderStatusEnum, modifier: Modifier = Modifier) {
             textColor = Color(0xFFD40E14)
             labelColor = Color(0xFFFDE7E8)
         }
+
+        OrderStatusEnum.REFUNDED -> {
+            text = stringResource(R.string.refunded)
+            textColor = Color(0xFFD40E14)
+            labelColor = Color(0xFFFDE7E8)
+        }
     }
 
     Box(

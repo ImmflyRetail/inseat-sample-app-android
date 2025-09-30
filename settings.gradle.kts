@@ -22,15 +22,9 @@ val localProps = Properties().apply {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
-        // Debug repository for local development
-        maven {
-            url = uri("${localProps.getProperty("LOCAL_DEBUG_SERVER", "")}")
-            isAllowInsecureProtocol = true
-        }
         maven {
             url = uri("https://app-cdn.immflyretail.link/inseat-android-sdk/")
             credentials {
@@ -38,6 +32,11 @@ dependencyResolutionManagement {
                 password = "${localProps.getProperty("PASSWORD", "")}"
             }
         }
+//        // Debug repository for local development
+//        maven {
+//            url = uri("${localProps.getProperty("LOCAL_DEBUG_SERVER", "")}")
+//            isAllowInsecureProtocol = true
+//        }
     }
 }
 

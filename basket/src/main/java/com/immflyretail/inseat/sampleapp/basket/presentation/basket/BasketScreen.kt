@@ -60,6 +60,8 @@ import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_12_20
 import com.immflyretail.inseat.sampleapp.ui.Loading
 import com.immflyretail.inseat.sampleapp.ui.Screen
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
+import com.immflyretail.inseat.sdk.api.models.AppliedPromotion
+import com.immflyretail.inseat.sdk.api.models.Money
 import java.math.BigDecimal
 
 fun NavGraphBuilder.basketScreen(navController: NavController) {
@@ -137,10 +139,10 @@ private fun ContentScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(items = uiState.items, itemContent = { item ->
-                    ListItem(item = item, eventReceiver = viewModel::obtainEvent,)
+                    ListItem(item = item, eventReceiver = viewModel::obtainEvent)
                 })
                 item {
-                    SummaryBlock(uiState.total, uiState.currency)
+                    SummaryBlock(uiState.subtotal, uiState.appliedPromotions)
                 }
             }
         }
@@ -226,15 +228,18 @@ private fun ListItem(
                 )
             }
 
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .wrapContentHeight()
+                    .wrapContentHeight(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(
                     modifier = Modifier
                         .padding(start = 16.dp)
-                        .align(Alignment.CenterStart)
+                        .wrapContentWidth()
+                        .weight(1f),
                 ) {
                     Text(
                         modifier = Modifier
@@ -264,9 +269,10 @@ private fun ListItem(
                 Text(
                     modifier = Modifier
                         .wrapContentWidth()
-                        .padding(bottom = 30.dp)
-                        .align(Alignment.CenterEnd),
-                    text = priceData.price.toString() + " " + priceData.currency,
+                        .weight(0.3f)
+                        .padding(bottom = 30.dp),
+
+                    text = priceData.amount.toString() + " " + priceData.currency,
                     style = N_12_20,
                     color = Color(0xFF333333),
                 )
@@ -384,8 +390,8 @@ fun LimitReachedIcon(
 
 @Composable
 fun SummaryBlock(
-    total: BigDecimal,
-    currency: String,
+    subtotal: Money,
+    appliedPromotions: List<AppliedPromotion>,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -394,13 +400,60 @@ fun SummaryBlock(
             .wrapContentHeight()
             .background(MaterialTheme.colorScheme.background)
     ) {
-
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 24.dp),
             color = Color(0xFFE2E2E2),
             thickness = 1.dp
         )
 
+        // Subtotal
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.subtotal),
+                style = B_14,
+                color = Color(0xFF333333),
+            )
+            Text(
+                text = subtotal.amount.toPlainString() + " " + subtotal.currency,
+                style = B_14,
+                color = Color(0xFF333333),
+                textAlign = TextAlign.Right,
+            )
+        }
+
+        // Promotions
+        if (appliedPromotions.isNotEmpty()) {
+            HorizontalDivider(
+                modifier = Modifier.padding(top = 8.dp),
+                color = Color(0xFFE2E2E2),
+                thickness = 1.dp
+            )
+
+            appliedPromotions.map { appliedPromotion ->
+                AppliedPromotionItem(appliedPromotion)
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(top = 8.dp),
+                color = Color(0xFFE2E2E2),
+                thickness = 1.dp
+            )
+        }
+
+        // Total
+        val discount = appliedPromotions.sumOf {
+            when (val type = it.benefitType) {
+                is AppliedPromotion.BenefitType.Coupon -> BigDecimal.ZERO
+                is AppliedPromotion.BenefitType.Discount -> type.totalSavings.amount
+            }
+        }
+        val total = subtotal.amount - discount
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -414,12 +467,45 @@ fun SummaryBlock(
                 color = Color(0xFF333333),
             )
             Text(
-                text = total.toPlainString() + " " + currency,
+                text = total.toPlainString() + " " + subtotal.currency,
                 style = B_18_26,
                 color = Color(0xFF333333),
                 textAlign = TextAlign.Right,
             )
         }
+
         Spacer(Modifier.height(80.dp))
     }
 }
+
+@Composable
+fun AppliedPromotionItem(appliedPromotion: AppliedPromotion, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = appliedPromotion.promotion.promotionId.toString(),
+            style = B_14,
+            color = Color(0xFF333333),
+        )
+        Text(
+            text = appliedPromotion.promotion.name,
+            style = B_14,
+            color = Color(0xFF333333),
+        )
+        Text(
+            text = when (val type = appliedPromotion.benefitType) {
+                is AppliedPromotion.BenefitType.Coupon -> "Coupon(${type.couponId})"
+                is AppliedPromotion.BenefitType.Discount -> "-${type.totalSavings.amount} ${type.totalSavings.currency}"
+            },
+            style = B_14,
+            color = Color(0xFF109C42),
+            textAlign = TextAlign.Right,
+        )
+    }
+}
+

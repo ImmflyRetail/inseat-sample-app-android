@@ -10,6 +10,7 @@
     <string name="order_now">Order now</string>
     <string name="limit_reached">Limit reached</string>
     <string name="total">Total</string>
+    <string name="subtotal">Subtotal</string>
     <string name="summary">Summary</string>
     <string name="items_for">%1$s items for</string>
     <string name="view_order_details">View order details</string>

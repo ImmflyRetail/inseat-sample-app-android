@@ -8,6 +8,7 @@ import com.immflyretail.inseat.sdk.api.InseatApi
 import com.immflyretail.inseat.sdk.api.models.Category
 import com.immflyretail.inseat.sdk.api.models.Menu
 import com.immflyretail.inseat.sdk.api.models.Product
+import com.immflyretail.inseat.sdk.api.models.Promotion
 import com.immflyretail.inseat.sdk.api.models.ShopInfo
 import com.immflyretail.inseat.sdk.api.models.UserData
 import kotlinx.coroutines.flow.Flow
@@ -22,13 +23,14 @@ interface ShopRepository {
     suspend fun fetchShop(): ShopInfo
     suspend fun fetchProducts(): List<Product>
     suspend fun fetchCategories(): List<Category>
+    suspend fun fetchPromotions(): List<Promotion>
     suspend fun fetchOrderCount(): Flow<Int>
     suspend fun getBasketItemsJSON(): String
     suspend fun setBasketItemsJSON(json: String)
     suspend fun selectMenu(menu: Menu)
-    suspend fun isMenuSelected() : Boolean
-    suspend fun getAvailableMenus() : List<Menu>
-    suspend fun isAutoupdateEnabled() : Boolean
+    suspend fun isMenuSelected(): Boolean
+    suspend fun getAvailableMenus(): List<Menu>
+    suspend fun isAutoupdateEnabled(): Boolean
 }
 
 internal class ListRepositoryImpl @Inject constructor(
@@ -41,7 +43,7 @@ internal class ListRepositoryImpl @Inject constructor(
         inseatApi.observeProducts()
     }
 
-    override suspend fun getShopObserver()= withContext(dispatchersProvider.getIO()) {
+    override suspend fun getShopObserver() = withContext(dispatchersProvider.getIO()) {
         inseatApi.observeShop()
     }
 
@@ -51,6 +53,10 @@ internal class ListRepositoryImpl @Inject constructor(
 
     override suspend fun fetchProducts(): List<Product> = withContext(dispatchersProvider.getIO()) {
         inseatApi.fetchProducts()
+    }
+
+    override suspend fun fetchPromotions(): List<Promotion> = withContext(dispatchersProvider.getIO()) {
+        inseatApi.fetchPromotions()
     }
 
     override suspend fun isAutoupdateEnabled(): Boolean {
@@ -69,11 +75,11 @@ internal class ListRepositoryImpl @Inject constructor(
         inseatApi.setUserData(UserData(menu))
     }
 
-    override suspend fun isMenuSelected() : Boolean {
+    override suspend fun isMenuSelected(): Boolean {
         return inseatApi.fetchSelectedMenu() != null
     }
 
-    override suspend fun getAvailableMenus(): List<Menu> = withContext(dispatchersProvider.getIO()){
+    override suspend fun getAvailableMenus(): List<Menu> = withContext(dispatchersProvider.getIO()) {
         inseatApi.fetchMenus()
     }
 

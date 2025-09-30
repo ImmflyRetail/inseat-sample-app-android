@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -69,6 +70,7 @@ import com.immflyretail.inseat.sampleapp.product_api.ProductScreenResult
 import com.immflyretail.inseat.sampleapp.shop.R
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopItem
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopStatus
+import com.immflyretail.inseat.sampleapp.shop.presentation.model.TabItem
 import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
 import com.immflyretail.inseat.sampleapp.ui.InseatButton
@@ -89,6 +91,7 @@ import com.immflyretail.inseat.sampleapp.ui.Screen
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
 import com.immflyretail.inseat.sdk.api.models.Category
 import com.immflyretail.inseat.sdk.api.models.Menu
+import com.immflyretail.inseat.sdk.api.models.Promotion
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.immflyretail.inseat.sampleapp.ui.R as uiR
@@ -110,7 +113,8 @@ fun ShopScreen(
     viewModel: ShopScreenViewModel,
     navController: NavController
 ) {
-    val isNeedToShowSearchBar = uiState is ShopScreenState.DataLoaded && uiState.isSearchEnabled
+    val isNeedToShowSearchBar =
+        uiState is ShopScreenState.DataLoaded && uiState.isSearchEnabled
     val searchFieldFocusRequester = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -213,14 +217,16 @@ private fun ShopToolbar(
     eventReceiver: (ShopScreenEvent) -> Unit
 ) {
     Row(Modifier.padding(end = 16.dp)) {
-        Image(
-            modifier = Modifier
-                .size(24.dp)
-                .clickable { eventReceiver(ShopScreenEvent.OnSearchClicked) }
-                .focusable(),
-            painter = painterResource(id = R.drawable.ic_search),
-            contentDescription = "Search Icon"
-        )
+        if (uiState.tabs[uiState.selectedTabIndex] !is TabItem.PromotionTab) {
+            Image(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable { eventReceiver(ShopScreenEvent.OnSearchClicked) }
+                    .focusable(),
+                painter = painterResource(id = R.drawable.ic_search),
+                contentDescription = "Search Icon"
+            )
+        }
 
         if (uiState.shopStatus == ShopStatus.ORDER) {
             BasketIcon(
@@ -345,14 +351,15 @@ fun MainData(
                 )
             }
             if (uiState.searchQuery.isEmpty()) {
-                if (uiState.categories.isNotEmpty()) {
-                    CategoryTabs(
+
+                if (uiState.tabs.isNotEmpty()) {
+                    ShopTabs(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp)
                             .background(Color(0xFFF2F2F2)),
                         selectedTabIndex = uiState.selectedTabIndex,
-                        categories = uiState.categories,
+                        tabs = uiState.tabs,
                         eventReceiver = eventReceiver
                     )
                 }
@@ -372,6 +379,7 @@ fun MainData(
             val productListModifier =
                 if (uiState.shopStatus != ShopStatus.ORDER) Modifier.padding(bottom = statusRawHeight) else Modifier
 
+            val selectedTab = uiState.tabs[uiState.selectedTabIndex]
             when {
                 uiState.isSearchEnabled && uiState.searchQuery.isNotEmpty() && uiState.searchResult.isNotEmpty() -> {
                     ProductsList(
@@ -385,6 +393,12 @@ fun MainData(
                 uiState.isSearchEnabled && uiState.searchQuery.isNotEmpty() && uiState.searchResult.isEmpty() -> {
                     ItemNotFound()
                 }
+
+                selectedTab is TabItem.PromotionTab -> PromotionsList(
+                    items = selectedTab.promotions,
+                    shopStatus = uiState.shopStatus,
+                    eventReceiver = eventReceiver,
+                )
 
                 else -> {
                     ProductsList(
@@ -421,9 +435,9 @@ fun MainData(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CategoryTabs(
+private fun ShopTabs(
     selectedTabIndex: Int,
-    categories: List<Category>,
+    tabs: List<TabItem>,
     eventReceiver: (ShopScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -443,14 +457,14 @@ private fun CategoryTabs(
         divider = {},
         edgePadding = 0.dp
     ) {
-        categories.forEachIndexed { index, category ->
+        tabs.forEachIndexed { index, tab ->
             val isTabSelected = index == selectedTabIndex
             Tab(
                 selected = isTabSelected,
-                onClick = { eventReceiver(ShopScreenEvent.OnCategorySelected(category, index)) },
+                onClick = { eventReceiver(ShopScreenEvent.OnTabSelected(tab, index)) },
                 text = {
                     Text(
-                        text = category.name,
+                        text = tab.getTabName(),
                         style = if (isTabSelected) B_16 else N_16,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -484,6 +498,29 @@ private fun ProductsList(
         }
         items(items) { item ->
             ListItem(item = item, eventReceiver = eventReceiver, shopStatus)
+        }
+    }
+}
+
+@Composable
+private fun PromotionsList(
+    items: List<Promotion>,
+    shopStatus: ShopStatus,
+    eventReceiver: (ShopScreenEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        contentPadding = PaddingValues(top = 24.dp, start = 16.dp, end = 16.dp, bottom = 54.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        if (shopStatus != ShopStatus.ORDER) {
+            item { InfoBlock() }
+        }
+        items(items) { item ->
+            PromotionItem(item = item, eventReceiver = eventReceiver)
         }
     }
 }
@@ -631,7 +668,7 @@ private fun ListItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 5.dp),
-                text = priceData.price.toString() + " " + priceData.currency,
+                text = priceData.amount.toString() + " " + priceData.currency,
                 style = textStyle,
             )
             Text(
@@ -640,6 +677,48 @@ private fun ListItem(
                     .padding(top = 5.dp),
                 text = stringResource(R.string.stock) + item.product.quantity.toString(),
                 style = textStyle
+            )
+        }
+    }
+}
+
+@Composable
+private fun PromotionItem(
+    item: Promotion,
+    eventReceiver: (ShopScreenEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .clickable { eventReceiver(ShopScreenEvent.OnPromotionClicked(item.promotionId)) },
+    ) {
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.primaryContainer)
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val textStyle = N_16.copy(color = Color(0xFF333333))
+
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(0.2f),
+                text = item.promotionId.toString(),
+                style = textStyle,
+            )
+
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                text = item.name,
+                style = textStyle,
             )
         }
     }

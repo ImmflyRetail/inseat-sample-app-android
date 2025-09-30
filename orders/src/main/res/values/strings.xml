@@ -17,6 +17,7 @@
     <string name="delivered">Delivered</string>
     <string name="in_preparation">In preparation</string>
     <string name="cancelled">Cancelled</string>
+    <string name="refunded">Refunded</string>
     <string name="hide_order_details">Hide order details</string>
     <string name="items_for">%1$s items for</string>
     <string name="view_order_details">View order details</string>

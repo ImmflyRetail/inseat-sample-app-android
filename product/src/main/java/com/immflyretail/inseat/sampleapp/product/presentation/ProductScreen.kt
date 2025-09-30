@@ -146,7 +146,7 @@ private fun ContentScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 9.dp),
-            text = priceData.price.toString() + " " + priceData.currency,
+            text = priceData.amount.toString() + " " + priceData.currency,
             style = N_18_26,
             color = Color(0xFF333333),
         )

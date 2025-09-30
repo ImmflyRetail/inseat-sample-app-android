@@ -35,7 +35,6 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.fragmentKtx)
-    implementation(libs.timber)
     implementation(libs.gson)
     implementation(libs.bundles.compose)
     implementation(libs.androidx.hilt.navigation.compose)

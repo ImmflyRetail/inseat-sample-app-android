@@ -13,6 +13,7 @@ import com.immflyretail.inseat.sdk.api.models.ShopInfo
 import com.immflyretail.inseat.sampleapp.shop.data.ShopRepository
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopItem
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopStatus
+import com.immflyretail.inseat.sampleapp.shop.presentation.model.TabItem
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.toShopStatus
 import com.immflyretail.inseat.sdk.api.models.Category
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -43,8 +44,8 @@ class ShopScreenViewModel @Inject constructor(
     private val selectedItems = mutableMapOf<Int, Int>()
     private var shopStatus = ShopStatus.DEFAULT
     private var ordersCount = 0
-    private var categories: List<Category> = emptyList()
-    private var selectedCategory: Category? = null
+    private var tabs: List<TabItem> = emptyList()
+    private var selectedTab: TabItem? = null
     private var allProducts: List<ShopItem> = emptyList()
 
     init {
@@ -113,12 +114,15 @@ class ShopScreenViewModel @Inject constructor(
                 _uiAction.send(ShopScreenActions.MoveFocusToSearch)
             }
 
-            is ShopScreenEvent.OnCategorySelected -> {
+            is ShopScreenEvent.OnTabSelected -> {
                 val currentState = _uiState.value as? ShopScreenState.DataLoaded ?: return
-                selectedCategory = event.category
+                selectedTab = event.tab
                 _uiState.value = currentState.copy(
                     selectedTabIndex = event.selectedTabIndex,
-                    items = getItemsByCategory(selectedCategory),
+                    items = when (event.tab) {
+                        is TabItem.CategoryTab -> getItemsByCategory(event.tab.category)
+                        else -> emptyList()
+                    }
                 )
             }
 
@@ -150,6 +154,9 @@ class ShopScreenViewModel @Inject constructor(
                 })
             }
 
+            is ShopScreenEvent.OnPromotionClicked -> {/*todo soon*/
+            }
+
             is ShopScreenEvent.OnProductUpdated -> {
                 when (event.selectedAmount) {
                     0, -1 -> selectedItems.remove(event.productId)
@@ -159,12 +166,16 @@ class ShopScreenViewModel @Inject constructor(
                 (uiState.value as? ShopScreenState.DataLoaded)?.let { state ->
                     val updatedIndex = allProducts.indexOfFirst { it.product.itemId == event.productId }
                     val updatedItems = allProducts.toMutableList()
-                    updatedItems[updatedIndex] = updatedItems[updatedIndex].copy(selectedQuantity = event.selectedAmount)
+                    updatedItems[updatedIndex] =
+                        updatedItems[updatedIndex].copy(selectedQuantity = event.selectedAmount)
                     allProducts = updatedItems
 
                     _uiState.value = state.copy(
                         itemsInBasket = getItemsInBasketCount(),
-                        items = getItemsByCategory(selectedCategory)
+                        items = when (val tab = selectedTab) {
+                            is TabItem.CategoryTab -> getItemsByCategory(tab.category)
+                            else -> emptyList()
+                        }
                     )
                 }
             }
@@ -178,7 +189,10 @@ class ShopScreenViewModel @Inject constructor(
                 (uiState.value as? ShopScreenState.DataLoaded)?.let { state ->
                     _uiState.value = state.copy(
                         itemsInBasket = getItemsInBasketCount(),
-                        items = getItemsByCategory(selectedCategory)
+                        items = when (val tab = selectedTab) {
+                            is TabItem.CategoryTab -> getItemsByCategory(tab.category)
+                            else -> emptyList()
+                        }
                     )
                 }
             }
@@ -210,16 +224,22 @@ class ShopScreenViewModel @Inject constructor(
             val items = repository.fetchProducts()
                 .map { ShopItem(product = it, selectedItems.getOrDefault(it.itemId, 0)) }
             allProducts = items
-            categories = categoryDef.await()
+
+            val newTabs = mutableListOf<TabItem>()
+            newTabs.add(TabItem.PromotionTab(repository.fetchPromotions()))
+            val categoriesTabs = categoryDef.await()
                 .filter { getItemsByCategory(it).isNotEmpty() }
                 .sortedBy { it.sortOrder }
+                .map { TabItem.CategoryTab(it) }
+            newTabs.addAll(categoriesTabs)
+            tabs = newTabs
 
-            selectedCategory = categories.firstOrNull()
+            selectedTab = tabs.first()
 
             _uiState.value = ShopScreenState.DataLoaded(
                 shopStatus,
-                items = getItemsByCategory(selectedCategory),
-                categories = categories,
+                items = emptyList(),
+                tabs = tabs,
                 ordersCount = ordersCount,
                 isPullToRefreshEnabled = true,
                 isRefreshing = false,
@@ -233,7 +253,7 @@ class ShopScreenViewModel @Inject constructor(
     private fun autoLoadData() = runCoroutine {
         _uiState.value = ShopScreenState.Loading
 
-        val categoryDef = async { repository.fetchCategories() }
+        val categoryDef = async { repository.fetchCategories().toMutableList() }
 
         launch {
             repository.getShopObserver()
@@ -261,18 +281,24 @@ class ShopScreenViewModel @Inject constructor(
                 .onEach { items ->
                     allProducts = items
 
-                    // set categories only once, because items count and categories can't change during runtime
-                    if (categories.isEmpty()) {
-                        categories = categoryDef.await()
+                    // set tabs only once, because promotions count and categories can't change during runtime
+                    if (tabs.isEmpty()) {
+                        val newTabs = mutableListOf<TabItem>()
+                        newTabs.add(TabItem.PromotionTab(repository.fetchPromotions()))
+                        val categoriesTabs = categoryDef.await()
                             .filter { getItemsByCategory(it).isNotEmpty() }
                             .sortedBy { it.sortOrder }
-                        selectedCategory = categories.firstOrNull()
+                            .map { TabItem.CategoryTab(it) }
+                        newTabs.addAll(categoriesTabs)
+                        tabs = newTabs
+
+                        selectedTab = tabs.first()
                     }
 
                     _uiState.value = ShopScreenState.DataLoaded(
                         shopStatus,
-                        categories = categories,
-                        items = getItemsByCategory(selectedCategory),
+                        tabs = tabs,
+                        items = emptyList(),
                         isPullToRefreshEnabled = false,
                         itemsInBasket = getItemsInBasketCount(),
                         ordersCount = ordersCount

@@ -6,6 +6,8 @@ import com.immflyretail.inseat.sampleapp.checkout.presentation.models.BasketItem
 import com.immflyretail.inseat.sampleapp.core.extension.runCoroutine
 import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
 import com.immflyretail.inseat.sdk.api.InseatException
+import com.immflyretail.inseat.sdk.api.models.AppliedPromotion
+import com.immflyretail.inseat.sdk.api.models.CartItem
 import com.immflyretail.inseat.sdk.api.models.Order
 import com.immflyretail.inseat.sdk.api.models.OrderItem
 import com.immflyretail.inseat.sdk.api.models.OrderStatusEnum
@@ -31,6 +33,8 @@ class CheckoutScreenViewModel @Inject constructor(
 
     private val _uiAction = Channel<CheckoutScreenActions>()
     val uiAction: Flow<CheckoutScreenActions> get() = _uiAction.receiveAsFlow()
+    var appliedPromotions = emptyList<AppliedPromotion>()
+    var forceAppliedPromotions = emptyList<AppliedPromotion>()
 
     init {
         loadData()
@@ -50,6 +54,18 @@ class CheckoutScreenViewModel @Inject constructor(
             is CheckoutScreenEvent.OnSeatNumberEntered -> {
                 val state = uiState.value as CheckoutScreenState.Data
                 _uiState.value = state.copy(seatNumber = event.seatNumber)
+            }
+
+            is CheckoutScreenEvent.OnPromotionEntered -> {
+                val state = uiState.value as CheckoutScreenState.Data
+                _uiState.value = state.copy(enteredPromotionId = event.promotionId)
+            }
+
+            is CheckoutScreenEvent.OnApplyForcePromoClicked -> runCoroutine {
+                val state = uiState.value as CheckoutScreenState.Data
+                _uiState.value = CheckoutScreenState.Loading
+                forceAppliedPromotions = repository.applyPromotion(event.promotionId.toInt(), state.items.toCartItems(), state.currency)
+                _uiState.value = state.copy(savings = forceAppliedPromotions.sumOf { (it.benefitType as? AppliedPromotion.BenefitType.Discount)?.totalSavings?.amount ?: BigDecimal.ZERO },)
             }
 
             CheckoutScreenEvent.OnClickOrderStatus -> runCoroutine {
@@ -73,26 +89,29 @@ class CheckoutScreenViewModel @Inject constructor(
 
     private fun makeOrder(state: CheckoutScreenState.Data) {
         _uiState.value = CheckoutScreenState.Loading
+
         runCoroutine {
+
             val createdTime = Date()
             repository.makeOrder(
-                Order(
+                Order.newInstance(
                     id = UUID.randomUUID().toString(),
                     shiftId = repository.getShiftId(),
-                    totalPrice = state.total,
+                    totalPrice = state.total - state.savings,
                     currency = state.currency,
                     items = state.items.map {
                         OrderItem(
                             itemId = it.product.itemId,
                             name = it.product.name,
                             quantity = it.quantity,
-                            price = it.product.prices.first().price
+                            price = it.product.prices.first().amount
                         )
                     },
                     status = OrderStatusEnum.PLACED,
                     customerSeatNumber = state.seatNumber,
                     createdAt = createdTime,
                     updatedAt = createdTime,
+                    appliedPromotions = appliedPromotions
                 )
             ) { result ->
 
@@ -124,7 +143,8 @@ class CheckoutScreenViewModel @Inject constructor(
             _uiState.value = CheckoutScreenState.Data(
                 items = emptyList(),
                 total = BigDecimal.ZERO,
-                currency = ""
+                currency = "",
+                savings = BigDecimal.ZERO,
             )
             return@runCoroutine
         }
@@ -134,15 +154,32 @@ class CheckoutScreenViewModel @Inject constructor(
                     BasketItem(selectedItems.getOrDefault(item.itemId, 0), item)
                 }
             val total = basketItems.sumOf {
-                it.product.prices.first().price.multiply(BigDecimal(it.quantity))
+                it.product.prices.first().amount.multiply(BigDecimal(it.quantity))
             }
+            val currency = basketItems.first().product.prices.first().currency
+            appliedPromotions = repository.applyPromotions(
+                cartItems = basketItems.toCartItems(),
+                currency = currency
+            )
+
             _uiState.value = CheckoutScreenState.Data(
                 items = basketItems,
                 total = total,
-                currency = basketItems.first().product.prices.first().currency,
+                savings = appliedPromotions.sumOf { (it.benefitType as? AppliedPromotion.BenefitType.Discount)?.totalSavings?.amount ?: BigDecimal.ZERO },
+                currency = currency,
             )
         } catch (e: InseatException) {
             _uiState.value = CheckoutScreenState.Error("Can't get basket data")
         }
+    }
+
+    private fun List<BasketItem>.toCartItems()=this.map {
+        CartItem(
+            id = it.product.itemId,
+            masterId = it.product.itemMasterId,
+            name = it.product.name,
+            quantity = it.quantity,
+            prices = it.product.prices
+        )
     }
 }

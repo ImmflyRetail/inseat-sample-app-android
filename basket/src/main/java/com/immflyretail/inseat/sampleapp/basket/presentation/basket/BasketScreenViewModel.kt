@@ -9,6 +9,8 @@ import com.immflyretail.inseat.sampleapp.core.extension.runCoroutine
 import com.immflyretail.inseat.sampleapp.product_api.ProductScreenContract
 import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
 import com.immflyretail.inseat.sdk.api.InseatException
+import com.immflyretail.inseat.sdk.api.models.CartItem
+import com.immflyretail.inseat.sdk.api.models.Money
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +34,8 @@ class BasketScreenViewModel @Inject constructor(
 
     private var selectedItems = mutableMapOf<Int, Int>()
     private var selectedItemsInitValue = mutableMapOf<Int, Int>()
+
+    private var currency: String = "EUR"
 
     init {
         loadData()
@@ -92,22 +96,18 @@ class BasketScreenViewModel @Inject constructor(
         if (selectedItems.isEmpty()) {
             _uiState.value = BasketScreenState.DataLoaded(
                 items = emptyList(),
-                total = BigDecimal.ZERO,
-                currency = ""
+                subtotal = Money("EUR", BigDecimal.ZERO),
+                appliedPromotions = emptyList()
             )
             return@runCoroutine
         }
         try {
-            val basketItems =
-                repository.fetchProductList(selectedItems.keys.toList()).map { item ->
+            val basketItems = repository.fetchProductList(selectedItems.keys.toList())
+                .map { item ->
                     BasketItem(selectedItems.getOrDefault(item.itemId, 0), item)
                 }
-            val total = basketItems.sumOf { it.product.prices.first().price }
-            _uiState.value = BasketScreenState.DataLoaded(
-                basketItems,
-                total,
-                basketItems.first().product.prices.first().currency
-            )
+            currency = basketItems.first().product.prices.first().currency
+            updateBasket(basketItems)
         } catch (e: InseatException) {
             _uiState.value = BasketScreenState.Error("Can't get basket data")
         }
@@ -122,8 +122,7 @@ class BasketScreenViewModel @Inject constructor(
             val newQuantity = items[updatedIndex].quantity + 1
             items[updatedIndex] = items[updatedIndex].copy(quantity = newQuantity)
             selectedItems[itemId] = newQuantity
-            val total = items.sumOf { it.product.prices.first().price }
-            _uiState.value = this.copy(items = items, total = total)
+            updateBasket(items)
         }
     }
 
@@ -141,9 +140,33 @@ class BasketScreenViewModel @Inject constructor(
             } else {
                 selectedItems[itemId] = newQuantity
             }
-            val total = items.sumOf { it.product.prices.first().price }
-            _uiState.value = this.copy(items = items, total = total)
+            updateBasket(items)
         }
     }
 
+    private fun updateBasket(items: List<BasketItem>) = runCoroutine {
+        val total = items.sumOf {
+            val price = it.product.prices.find { price -> price.currency == currency }?.amount ?: BigDecimal.ZERO
+            price.multiply(BigDecimal(it.quantity))
+        }
+
+        val appliedPromotions = repository.applyPromotions(
+            items.map {
+                CartItem(
+                    id = it.product.itemId,
+                    masterId = it.product.itemMasterId,
+                    name = it.product.name,
+                    quantity = it.quantity,
+                    prices = it.product.prices
+                )
+            },
+            currency = currency
+        )
+
+        _uiState.value = BasketScreenState.DataLoaded(
+            items = items,
+            subtotal = Money(currency, total),
+            appliedPromotions = appliedPromotions
+        )
+    }
 }

@@ -101,7 +101,9 @@ private fun CheckoutScreen(
                             it
                         )
                     )
-                }
+                },
+                onApplyPromotionClicked = { viewModel.obtainEvent(CheckoutScreenEvent.OnApplyForcePromoClicked(it))},
+                onPromotionEntered = { viewModel.obtainEvent(CheckoutScreenEvent.OnPromotionEntered(it))}
             )
 
             is CheckoutScreenState.Error -> ErrorScreen(uiState.message)
@@ -135,7 +137,9 @@ private fun ContentScreen(
     modifier: Modifier = Modifier,
     onMakeOrderClicked: () -> Unit = {},
     onDetailsClicked: () -> Unit = {},
+    onApplyPromotionClicked: (String) -> Unit,
     onSeatNumberEntered: (String) -> Unit = {},
+    onPromotionEntered: (String) -> Unit,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -165,11 +169,12 @@ private fun ContentScreen(
                             total = uiState.total,
                             currency = uiState.currency,
                             onDetailsClicked = onDetailsClicked,
+                            savings = uiState.savings
                         )
                     } else {
                         CollapsedSummary(
                             items = uiState.items,
-                            total = uiState.total,
+                            total = uiState.total - uiState.savings,
                             currency = uiState.currency,
                             onDetailsClicked = onDetailsClicked,
                         )
@@ -182,6 +187,14 @@ private fun ContentScreen(
                     enteredSeatNumber = uiState.seatNumber,
                     isSeatNumberValid = isSeatNumberValid,
                     onSeatNumberEntered = onSeatNumberEntered
+                )
+            }
+
+            item {
+                ForcePromotionBlock(
+                    promotionId = uiState.enteredPromotionId,
+                    onPromotionEntered = onPromotionEntered,
+                    onApplyPromotionClicked = onApplyPromotionClicked
                 )
             }
 
@@ -203,6 +216,7 @@ private fun ContentScreen(
 private fun ExpandedSummary(
     items: List<BasketItem>,
     total: BigDecimal,
+    savings: BigDecimal,
     currency: String,
     modifier: Modifier = Modifier,
     onDetailsClicked: () -> Unit
@@ -240,13 +254,54 @@ private fun ExpandedSummary(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = stringResource(R.string.total),
+                text = stringResource(R.string.subtotal),
                 style = B_18,
                 color = Color(0xFF333333),
             )
 
             Text(
                 text = "${total.toPlainString()} $currency",
+                style = B_18,
+                color = Color(0xFF333333),
+                textAlign = TextAlign.Right,
+            )
+        }
+        Row(
+            modifier = Modifier
+                .padding(bottom = 24.dp)
+                .fillMaxWidth()
+                .clickable { onDetailsClicked.invoke() },
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = stringResource(R.string.savings),
+                style = B_18,
+                color = Color(0xFF333333),
+            )
+
+            Text(
+                text = "-${savings.toPlainString()} $currency",
+                style = B_18,
+                color = Color(0xFF109C42),
+                textAlign = TextAlign.Right,
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .padding(bottom = 24.dp)
+                .fillMaxWidth()
+                .clickable { onDetailsClicked.invoke() },
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = stringResource(R.string.total),
+                style = B_18,
+                color = Color(0xFF333333),
+            )
+
+            Text(
+                text = "${(total-savings).toPlainString()} $currency",
                 style = B_18,
                 color = Color(0xFF333333),
                 textAlign = TextAlign.Right,
@@ -372,7 +427,7 @@ private fun ProductItem(
 
         val price = item.product.prices.first()
         Text(
-            text = "${price.price.toPlainString()} ${price.currency}",
+            text = "${price.amount.toPlainString()} ${price.currency}",
             style = B_14,
             color = Color(0xFF333333),
             textAlign = TextAlign.End,
@@ -441,6 +496,71 @@ fun EnterDetailsBlock(
                 }
             )
         )
+    }
+}
+
+@Composable
+fun ForcePromotionBlock(
+    promotionId: String,
+    modifier: Modifier = Modifier,
+    onPromotionEntered: (String) -> Unit,
+    onApplyPromotionClicked: (String) -> Unit
+) {
+    val focusManager = LocalFocusManager.current
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Enter promotion ID for force usage",
+            style = B_18_26,
+            color = Color(0xFF333333),
+        )
+
+        OutlinedTextField(
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .fillMaxWidth(),
+            value = promotionId,
+            onValueChange = { onPromotionEntered.invoke(it) },
+            label = {
+                Text(
+                    text = "Promotion ID",
+                    style = N_14_22,
+                    color = Color(0xFF666666),
+                )
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedBorderColor = Color(0xFFF2F2F2),
+                focusedBorderColor = Color(0xFFF2F2F2),
+                cursorColor = Color(0xFF333333),
+            ),
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = {
+                    focusManager.moveFocus(FocusDirection.Down)
+                }
+            )
+        )
+
+        InseatButton(
+            text = "Apply promo",
+            onClick = { onApplyPromotionClicked.invoke(promotionId) },
+            isEnabled = promotionId.isNotEmpty(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        )
+
     }
 }
 
