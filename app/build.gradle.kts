@@ -67,6 +67,7 @@ dependencies {
     implementation(project(Modules.orders))
     implementation(project(Modules.product))
     implementation(project(Modules.checkout))
+    implementation(project(Modules.promotion))
 
     // Inseat SDK
     implementation(libs.inseat)

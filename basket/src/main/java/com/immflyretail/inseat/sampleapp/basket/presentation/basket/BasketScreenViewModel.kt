@@ -106,7 +106,6 @@ class BasketScreenViewModel @Inject constructor(
                 .map { item ->
                     BasketItem(selectedItems.getOrDefault(item.itemId, 0), item)
                 }
-            currency = basketItems.first().product.prices.first().currency
             updateBasket(basketItems)
         } catch (e: InseatException) {
             _uiState.value = BasketScreenState.Error("Can't get basket data")

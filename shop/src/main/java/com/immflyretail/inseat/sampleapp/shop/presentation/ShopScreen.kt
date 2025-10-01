@@ -77,12 +77,14 @@ import com.immflyretail.inseat.sampleapp.ui.InseatButton
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14_22
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_16
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_16_24
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_18_26
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_22_30
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_8_13
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_10
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_12_20
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14
+import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14_22
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16_24
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_18_26
@@ -396,6 +398,7 @@ fun MainData(
 
                 selectedTab is TabItem.PromotionTab -> PromotionsList(
                     items = selectedTab.promotions,
+                    currency = uiState.currency,
                     shopStatus = uiState.shopStatus,
                     eventReceiver = eventReceiver,
                 )
@@ -505,13 +508,14 @@ private fun ProductsList(
 @Composable
 private fun PromotionsList(
     items: List<Promotion>,
+    currency: String,
     shopStatus: ShopStatus,
     eventReceiver: (ShopScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
         contentPadding = PaddingValues(top = 24.dp, start = 16.dp, end = 16.dp, bottom = 54.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
@@ -520,7 +524,7 @@ private fun PromotionsList(
             item { InfoBlock() }
         }
         items(items) { item ->
-            PromotionItem(item = item, eventReceiver = eventReceiver)
+            PromotionItem(item = item, currency = currency, eventReceiver = eventReceiver)
         }
     }
 }
@@ -617,18 +621,19 @@ private fun ListItem(
 
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .wrapContentWidth()
                     .height(150.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.BottomEnd
+                contentAlignment = Alignment.CenterEnd
             ) {
                 val decodedBytes =
                     Base64.decode(item.product.base64Image.encodeToByteArray(), Base64.DEFAULT)
                 val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
                 Image(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .wrapContentWidth()
+                        .wrapContentHeight()
                         .padding(8.dp),
                     painter = if (bitmap != null) {
                         BitmapPainter(image = bitmap.asImageBitmap())
@@ -685,41 +690,82 @@ private fun ListItem(
 @Composable
 private fun PromotionItem(
     item: Promotion,
+    currency: String,
     eventReceiver: (ShopScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .wrapContentHeight()
+            .height(120.dp)
             .clickable { eventReceiver(ShopScreenEvent.OnPromotionClicked(item.promotionId)) },
     ) {
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            val textStyle = N_16.copy(color = Color(0xFF333333))
-
-            Text(
+        Box(modifier = modifier.fillMaxSize()) {
+            Column(
                 modifier = Modifier
+                    .fillMaxHeight()
                     .fillMaxWidth()
-                    .weight(0.2f),
-                text = item.promotionId.toString(),
-                style = textStyle,
-            )
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = item.name,
+                    style = B_16_24,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = Color(0xFF333333)
+                )
 
-            Text(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                text = item.name,
-                style = textStyle,
-            )
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = item.discountText,
+                    style = N_14_22,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    color = Color(0xFF666666)
+                )
+
+                val discount = item.discounts.firstOrNull { it.currency == currency }
+                var textColor = Color(0xFF109C42)
+                val savings = when (item.benefitType) {
+                    Promotion.BenefitType.DISCOUNT -> when (item.discountType) {
+                        Promotion.DiscountType.PERCENTAGE -> discount?.discount.toString() + "% OFF"
+                        Promotion.DiscountType.AMOUNT -> discount?.discount.toString() + "$currency OFF"
+                        Promotion.DiscountType.FIXED_PRICE -> {
+                            textColor = Color(0xFF333333)
+                            discount?.discount.toString() + currency
+                        }
+
+                        Promotion.DiscountType.COUPON -> "Get a voucher"
+                    }
+
+                    Promotion.BenefitType.COUPON -> "Get a voucher"
+                }
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = savings,
+                    style = B_18_26,
+                    color = textColor
+                )
+            }
+            Box(
+                modifier = modifier
+                    .padding(8.dp)
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE2E2E2))
+                    .align(Alignment.BottomEnd),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    modifier = Modifier.size(12.dp),
+                    painter = painterResource(id = R.drawable.ic_plus),
+                    contentDescription = "Not selected",
+                )
+            }
         }
     }
 }

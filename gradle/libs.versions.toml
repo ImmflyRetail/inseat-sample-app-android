@@ -3,8 +3,8 @@
 compileSdk = "36"
 minSdk = "24"
 targetSdk = "36"
-versionCode = "5"
-versionName = "1.0.5"
+versionCode = "6"
+versionName = "1.0.6"
 
 #Core
 agp = "8.12.2"
@@ -32,7 +32,7 @@ navigation = "2.9.3"
 timber = "5.0.1"
 kotlinxSerialization = "1.9.0"
 uiTextGoogleFonts = "1.9.0"
-inseat = "0.1.17"
+inseat = "0.1.18"
 
 [libraries]
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }

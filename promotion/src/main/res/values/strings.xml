@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="out_of_stock">Out of stock</string>
+    <string name="limit_reached">Limit reached</string>
+    <string name="promotion_add_to_cart_button">Add to cart</string>
+    <string name="spend_limit_reached">Benefits unlocked!</string>
+    <string name="away_to_unlock_benefits">away to unlock benefits</string>
+</resources>

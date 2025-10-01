@@ -26,44 +26,47 @@ fun Screen(
     toolbarItem: @Composable () -> Unit = {},
     customToolbar: (@Composable () -> Unit)? = null,
     isBackButtonEnabled: Boolean = true,
+    hasTopBar: Boolean = true,
     onBackClicked: () -> Unit = {},
     content: @Composable () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-            ) {
-                if (isBackButtonEnabled) {
-                    Image(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .padding(horizontal = 9.dp, vertical = 5.dp)
-                            .align(Alignment.CenterStart)
-                            .clickable { onBackClicked() },
-                        painter = painterResource(R.drawable.ic_back),
-                        contentDescription = null
-                    )
-                }
+            if (hasTopBar) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                ) {
+                    if (isBackButtonEnabled) {
+                        Image(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .padding(horizontal = 9.dp, vertical = 5.dp)
+                                .align(Alignment.CenterStart)
+                                .clickable { onBackClicked() },
+                            painter = painterResource(R.drawable.ic_back),
+                            contentDescription = null
+                        )
+                    }
 
-                if (customToolbar != null) {
-                    customToolbar()
-                } else {
-                    Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.Center),
-                        text = title,
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.titleLarge
-                    )
+                    if (customToolbar != null) {
+                        customToolbar()
+                    } else {
+                        Text(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.Center),
+                            text = title,
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.titleLarge
+                        )
 
-                    Box(modifier = Modifier.align(Alignment.CenterEnd)) {
-                        toolbarItem()
+                        Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                            toolbarItem()
+                        }
                     }
                 }
             }

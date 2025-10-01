@@ -11,6 +11,7 @@ sealed interface ShopScreenState {
     data class SelectMenu(val menus: List<Menu>) : ShopScreenState
     data class Error(val message: String?) : ShopScreenState
     data class DataLoaded(
+        val currency: String = "EUR",
         val shopStatus: ShopStatus,
         val items: List<ShopItem>,
         val isPullToRefreshEnabled: Boolean,

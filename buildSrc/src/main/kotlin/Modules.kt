@@ -22,6 +22,8 @@ object Modules {
     const val product_api = ":product_api"
     const val checkout = ":checkout"
     const val checkout_api = ":checkout_api"
+    const val promotion_api = ":promotion_api"
+    const val promotion = ":promotion"
 
     // sdk
     const val inseat = ":inseat"

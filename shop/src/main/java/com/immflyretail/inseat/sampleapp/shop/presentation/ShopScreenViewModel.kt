@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenContract
 import com.immflyretail.inseat.sampleapp.core.extension.runCoroutine
 import com.immflyretail.inseat.sampleapp.orders_api.OrdersScreenContract
+import com.immflyretail.inseat.sampleapp.promotion_api.PromotionContract
 import com.immflyretail.inseat.sampleapp.product_api.ProductScreenContract
 import com.immflyretail.inseat.sampleapp.settings_api.SettingsScreenContract
 import com.immflyretail.inseat.sdk.api.InseatException
@@ -154,7 +155,12 @@ class ShopScreenViewModel @Inject constructor(
                 })
             }
 
-            is ShopScreenEvent.OnPromotionClicked -> {/*todo soon*/
+            is ShopScreenEvent.OnPromotionClicked -> {
+                runCoroutine {
+                    _uiAction.send(ShopScreenActions.Navigate {
+                        navigate(PromotionContract.Route(event.promotionId))
+                    })
+                }
             }
 
             is ShopScreenEvent.OnProductUpdated -> {
@@ -237,7 +243,7 @@ class ShopScreenViewModel @Inject constructor(
             selectedTab = tabs.first()
 
             _uiState.value = ShopScreenState.DataLoaded(
-                shopStatus,
+                shopStatus = shopStatus,
                 items = emptyList(),
                 tabs = tabs,
                 ordersCount = ordersCount,
@@ -296,7 +302,7 @@ class ShopScreenViewModel @Inject constructor(
                     }
 
                     _uiState.value = ShopScreenState.DataLoaded(
-                        shopStatus,
+                        shopStatus = shopStatus,
                         tabs = tabs,
                         items = emptyList(),
                         isPullToRefreshEnabled = false,

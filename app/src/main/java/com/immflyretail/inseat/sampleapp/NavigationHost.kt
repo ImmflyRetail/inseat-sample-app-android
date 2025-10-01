@@ -8,6 +8,7 @@ import com.immflyretail.inseat.sampleapp.checkout.presentation.checkoutScreen
 import com.immflyretail.inseat.sampleapp.orders.presentation.order.ordersScreen
 import com.immflyretail.inseat.sampleapp.orders.presentation.status.ordersStatusScreen
 import com.immflyretail.inseat.sampleapp.product.presentation.productScreen
+import com.immflyretail.inseat.sampleapp.promotion.presentation.promotionBuilderScreen
 import com.immflyretail.inseat.sampleapp.settings.presentation.settingsScreen
 import com.immflyretail.inseat.sampleapp.shop.presentation.shopScreen
 import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
@@ -25,5 +26,6 @@ fun NavigationHost() {
         ordersStatusScreen(navController)
         settingsScreen(navController)
         productScreen(navController)
+        promotionBuilderScreen(navController)
     }
 }

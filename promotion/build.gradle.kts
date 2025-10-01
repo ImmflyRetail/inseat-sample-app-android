@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.immflyretail.inseat.sampleapp.shop"
+    namespace = "com.immflyretail.inseat.sampleapp.promotion"
 
     buildFeatures {
         viewBinding = true
@@ -23,12 +23,9 @@ dependencies {
     implementation(project(Modules.core_ui))
     implementation(project(Modules.core_extension))
     implementation(project(Modules.core_preferences_api))
+
+    api(project(Modules.promotion_api))
     implementation(project(Modules.basket_api))
-    implementation(project(Modules.orders_api))
-    implementation(project(Modules.settings_api))
-    implementation(project(Modules.product_api))
-    implementation(project(Modules.promotion_api))
-    api(project(Modules.shop_api))
 
     implementation(libs.inseat)
     // Libs
