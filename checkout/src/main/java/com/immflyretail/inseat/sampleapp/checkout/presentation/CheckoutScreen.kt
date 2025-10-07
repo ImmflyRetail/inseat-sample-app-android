@@ -101,9 +101,7 @@ private fun CheckoutScreen(
                             it
                         )
                     )
-                },
-                onApplyPromotionClicked = { viewModel.obtainEvent(CheckoutScreenEvent.OnApplyForcePromoClicked(it))},
-                onPromotionEntered = { viewModel.obtainEvent(CheckoutScreenEvent.OnPromotionEntered(it))}
+                }
             )
 
             is CheckoutScreenState.Error -> ErrorScreen(uiState.message)
@@ -137,9 +135,7 @@ private fun ContentScreen(
     modifier: Modifier = Modifier,
     onMakeOrderClicked: () -> Unit = {},
     onDetailsClicked: () -> Unit = {},
-    onApplyPromotionClicked: (String) -> Unit,
     onSeatNumberEntered: (String) -> Unit = {},
-    onPromotionEntered: (String) -> Unit,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -187,14 +183,6 @@ private fun ContentScreen(
                     enteredSeatNumber = uiState.seatNumber,
                     isSeatNumberValid = isSeatNumberValid,
                     onSeatNumberEntered = onSeatNumberEntered
-                )
-            }
-
-            item {
-                ForcePromotionBlock(
-                    promotionId = uiState.enteredPromotionId,
-                    onPromotionEntered = onPromotionEntered,
-                    onApplyPromotionClicked = onApplyPromotionClicked
                 )
             }
 
@@ -301,7 +289,7 @@ private fun ExpandedSummary(
             )
 
             Text(
-                text = "${(total-savings).toPlainString()} $currency",
+                text = "${(total - savings).toPlainString()} $currency",
                 style = B_18,
                 color = Color(0xFF333333),
                 textAlign = TextAlign.Right,

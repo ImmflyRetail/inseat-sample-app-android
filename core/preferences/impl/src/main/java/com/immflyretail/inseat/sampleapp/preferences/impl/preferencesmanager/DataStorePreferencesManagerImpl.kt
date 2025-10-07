@@ -11,7 +11,9 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
 import com.immflyretail.inseat.sampleapp.preferences.api.preferencesmanager.PreferencesManager
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 
@@ -51,6 +53,10 @@ internal class DataStorePreferencesManagerImpl @Inject constructor(
 
     override suspend fun read(key: String, defaultValue: String): String {
         return dataStore.data.first()[stringPreferencesKey(key)] ?: defaultValue
+    }
+
+    override fun asFlow(key: String, defaultValue: String): Flow<String> = dataStore.data.map {
+        it[stringPreferencesKey(key)] ?: defaultValue
     }
 
     override suspend fun read(key: String, defaultValue: Int): Int {

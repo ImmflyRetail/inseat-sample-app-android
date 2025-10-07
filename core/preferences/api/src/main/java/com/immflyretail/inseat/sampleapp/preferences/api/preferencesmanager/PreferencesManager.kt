@@ -1,5 +1,7 @@
 package com.immflyretail.inseat.sampleapp.preferences.api.preferencesmanager
 
+import kotlinx.coroutines.flow.Flow
+
 
 interface PreferencesManager {
 
@@ -18,4 +20,6 @@ interface PreferencesManager {
     suspend fun <T> read(key: String, clazz: Class<T>): T?
 
     suspend fun remove(key: String)
+
+    fun asFlow(key: String, defaultValue: String): Flow<String>
 }

@@ -343,9 +343,14 @@ private fun CollapsedOrder(
                 .clickable { onDetailsClicked.invoke() },
             horizontalArrangement = Arrangement.aligned(Alignment.CenterHorizontally),
         ) {
+            val text = if (order.status == OrderStatusEnum.COMPLETED) {
+                stringResource(R.string.view_order_details)
+            } else {
+                stringResource(R.string.view_order_status)
+            }
 
             Text(
-                text = stringResource(R.string.view_order_details),
+                text = text,
                 style = N_14,
                 color = Color(0xFFDD083A),
                 textDecoration = TextDecoration.Underline,

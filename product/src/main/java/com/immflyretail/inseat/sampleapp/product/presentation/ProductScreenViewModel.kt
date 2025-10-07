@@ -7,8 +7,6 @@ import com.immflyretail.inseat.sampleapp.checkout_api.CheckoutScreenContract
 import com.immflyretail.inseat.sampleapp.core.extension.runCoroutine
 import com.immflyretail.inseat.sampleapp.product.data.ProductRepository
 import com.immflyretail.inseat.sampleapp.product_api.ProductScreenContract
-import com.immflyretail.inseat.sampleapp.product_api.ProductScreenResultKey
-import com.immflyretail.inseat.sampleapp.product_api.ProductScreenResult
 import com.immflyretail.inseat.sdk.api.InseatException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -33,7 +31,6 @@ class ProductScreenViewModel @Inject constructor(
 
     private val productId: Int = savedStateHandle.toRoute<ProductScreenContract.Route>().id
     private var selectedAmount: Int = 0
-    private var initSelectedAmount: Int = 0
 
     init {
         loadData()
@@ -51,15 +48,7 @@ class ProductScreenViewModel @Inject constructor(
             }
 
             ProductScreenEvent.OnBackClicked -> runCoroutine {
-                _uiAction.send(ProductScreenActions.Navigate {
-                    if (initSelectedAmount != selectedAmount) {
-                        previousBackStackEntry?.savedStateHandle?.set(
-                            ProductScreenResultKey.REFRESHED_PRODUCT.name,
-                            ProductScreenResult(productId, selectedAmount)
-                        )
-                    }
-                    popBackStack()
-                })
+                _uiAction.send(ProductScreenActions.Navigate { popBackStack() })
             }
 
             ProductScreenEvent.OnConfirmClicked -> runCoroutine {
@@ -79,8 +68,7 @@ class ProductScreenViewModel @Inject constructor(
     private fun loadData() = runCoroutine {
         _uiState.value = ProductScreenState.Loading
         try {
-            initSelectedAmount = repository.getSelectedAmount(productId)
-            selectedAmount = initSelectedAmount
+            selectedAmount = repository.getSelectedAmount(productId)
             val product = repository.fetchProduct(productId)
 
             launch {

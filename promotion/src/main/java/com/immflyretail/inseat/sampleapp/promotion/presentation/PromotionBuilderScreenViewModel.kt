@@ -35,8 +35,6 @@ class PromotionBuilderScreenViewModel @Inject constructor(
 
     private val _uiAction = Channel<PromotionBuilderScreenActions>()
     val uiAction: Flow<PromotionBuilderScreenActions> get() = _uiAction.receiveAsFlow()
-
-    private val selectedItems = mutableMapOf<Int, Int>()
     private val currency = "EUR"
 
     init {
@@ -188,64 +186,11 @@ class PromotionBuilderScreenViewModel @Inject constructor(
         this.categoryId == id || this.subcategories.any { subcategory -> subcategory.id == categoryId }
 
 
-    private fun PromotionBuilderScreenState.increaseSelectedQuantity(itemId: Int) {
-        val state = this as? PromotionBuilderScreenState.DataLoaded ?: return
-        val promoBlocks = state.blocks.toMutableList()
-        var clickedPromotionItem: PromotionItem? = null
+    private fun PromotionBuilderScreenState.increaseSelectedQuantity(itemId: Int) = updateQuantity(itemId, 1)
 
-        val blockForUpdate = promoBlocks.find { block ->
-            block.promotionItems.find { promo -> promo.product.itemId == itemId }
-                ?.let { clickedPromotionItem = it.copy() } != null
-        } ?: return
+    private fun PromotionBuilderScreenState.decreaseSelectedQuantity(itemId: Int) = updateQuantity(itemId, -1)
 
-        clickedPromotionItem ?: return
-
-        var newPromotionBlock: PromotionBlock? = null
-
-        when (blockForUpdate) {
-            is PromotionBlock.ProductPurchaseBlock -> {
-                if (blockForUpdate.selectedItems < blockForUpdate.expectedSelectedItems) {
-                    newPromotionBlock = blockForUpdate.copy(selectedItems = blockForUpdate.selectedItems + 1)
-                }
-            }
-
-            is PromotionBlock.SpendLimitBlock -> {
-                newPromotionBlock = blockForUpdate.copy(
-                    selectedItemsPrice = blockForUpdate.selectedItemsPrice + (clickedPromotionItem.product.prices.find { it.currency == currency }?.amount
-                        ?: BigDecimal.ZERO)
-                )
-
-            }
-        }
-
-        newPromotionBlock?.promotionItems?.find { it.product.itemId == itemId }?.selectedQuantity += 1
-
-        val updatedBlocks = promoBlocks.apply {
-            newPromotionBlock?.let {
-                set(
-                    index = promoBlocks.indexOf(blockForUpdate),
-                    element = it
-                )
-            }
-        }
-
-        val isComplete = when (triggerType) {
-            PromotionTriggerType.ProductPurchase -> {
-                updatedBlocks.find { block ->
-                    when (block) {
-                        is PromotionBlock.ProductPurchaseBlock -> block.selectedItems < block.expectedSelectedItems
-                        else -> false
-                    }
-                } == null
-            }
-
-            is PromotionTriggerType.SpendLimit -> triggerType.haveToSpend.amount <= updatedBlocks.sumOf { it.promotionItems.sumOf { it.product.prices.find { it.currency == currency }!!.amount.multiply(it.selectedQuantity.toBigDecimal()) } }
-        }
-
-        _uiState.value = state.copy(blocks = updatedBlocks, isCompleted = isComplete)
-    }
-
-    private fun PromotionBuilderScreenState.decreaseSelectedQuantity(itemId: Int) {
+    private fun PromotionBuilderScreenState.updateQuantity(itemId: Int, modifier: Int) {
         val state = this as? PromotionBuilderScreenState.DataLoaded ?: return
         val promoBlocks = state.blocks.toMutableList()
         var clickedPromotionItem: PromotionItem? = null
@@ -254,42 +199,44 @@ class PromotionBuilderScreenViewModel @Inject constructor(
             block.promotionItems.find { promo -> promo.product.itemId == itemId }
                 ?.let { clickedPromotionItem = it } != null
         } ?: return
-
         clickedPromotionItem ?: return
 
-        var newPromotionBlock: PromotionBlock? = null
+        val newPromotionItems = blockForUpdate.promotionItems.map { promoItem ->
+            if (promoItem.product.itemId == itemId) {
+                promoItem.copy(selectedQuantity = promoItem.selectedQuantity + modifier)
+            } else {
+                promoItem
+            }
+        }
 
+        val newPromotionBlock: PromotionBlock
         when (blockForUpdate) {
             is PromotionBlock.ProductPurchaseBlock -> {
-                if (blockForUpdate.selectedItems > 0) {
-                    newPromotionBlock = blockForUpdate.copy(selectedItems = blockForUpdate.selectedItems - 1)
+                if (blockForUpdate.selectedItems < blockForUpdate.expectedSelectedItems) {
+                    newPromotionBlock = blockForUpdate.copy(
+                        selectedItems = blockForUpdate.selectedItems + modifier,
+                        promotionItems = newPromotionItems
+                    )
+                } else {
+                    return
                 }
             }
 
             is PromotionBlock.SpendLimitBlock -> {
-                if (clickedPromotionItem.selectedQuantity > 0) {
-                    newPromotionBlock = blockForUpdate.copy(
-                        selectedItemsPrice = blockForUpdate.selectedItemsPrice - (clickedPromotionItem.product.prices.find { it.currency == currency }?.amount
-                            ?: BigDecimal.ZERO)
-                    )
-                }
-            }
-        }
-
-        newPromotionBlock?.promotionItems?.find { it.product.itemId == itemId }?.selectedQuantity -= 1
-
-        val updatedBlocks = promoBlocks.apply {
-            newPromotionBlock?.let {
-                set(
-                    index = promoBlocks.indexOf(blockForUpdate),
-                    element = it
+                val price =
+                    clickedPromotionItem.product.prices.find { it.currency == currency }?.amount ?: BigDecimal.ZERO
+                newPromotionBlock = blockForUpdate.copy(
+                    selectedItemsPrice = blockForUpdate.selectedItemsPrice + (price * modifier.toBigDecimal()),
+                    promotionItems = newPromotionItems
                 )
             }
         }
 
+        promoBlocks.set(index = promoBlocks.indexOf(blockForUpdate), element = newPromotionBlock)
+
         val isComplete = when (triggerType) {
             PromotionTriggerType.ProductPurchase -> {
-                updatedBlocks.find { block ->
+                promoBlocks.find { block ->
                     when (block) {
                         is PromotionBlock.ProductPurchaseBlock -> block.selectedItems < block.expectedSelectedItems
                         else -> false
@@ -297,16 +244,19 @@ class PromotionBuilderScreenViewModel @Inject constructor(
                 } == null
             }
 
-            is PromotionTriggerType.SpendLimit -> triggerType.haveToSpend.amount <= updatedBlocks.sumOf { it.promotionItems.sumOf { it.product.prices.find { it.currency == currency }!!.amount.multiply(it.selectedQuantity.toBigDecimal()) } }
-        }
+            is PromotionTriggerType.SpendLimit -> {
+                val selectedAmount = promoBlocks.sumOf { block ->
+                    block.promotionItems.sumOf { promotionItem ->
+                        val price = promotionItem.product.prices.find { it.currency == currency }?.amount
+                            ?: BigDecimal.ZERO
 
-        updatedBlocks.find { block ->
-            when (block) {
-                is PromotionBlock.ProductPurchaseBlock -> block.selectedItems >= block.expectedSelectedItems
-                is PromotionBlock.SpendLimitBlock -> block.selectedItemsPrice >= ((state.triggerType as? PromotionTriggerType.SpendLimit)?.haveToSpend?.amount
-                    ?: BigDecimal.ZERO)
+                        price.multiply(promotionItem.selectedQuantity.toBigDecimal())
+                    }
+                }
+                triggerType.haveToSpend.amount <= selectedAmount
             }
         }
-        _uiState.value = state.copy(blocks = updatedBlocks, isCompleted = isComplete)
+
+        _uiState.value = state.copy(blocks = promoBlocks, isCompleted = isComplete)
     }
 }

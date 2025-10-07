@@ -11,22 +11,26 @@ import com.immflyretail.inseat.sdk.api.models.Product
 import com.immflyretail.inseat.sdk.api.models.Promotion
 import com.immflyretail.inseat.sdk.api.models.ShopInfo
 import com.immflyretail.inseat.sdk.api.models.UserData
+import com.immflyretail.inseat.sdk.impl.c
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 interface ShopRepository {
-    suspend fun getProductsObserver(): StateFlow<List<Product>>
+    suspend fun getProductsObserver(category: Category): StateFlow<List<Product>>
     suspend fun getShopObserver(): StateFlow<ShopInfo>
     suspend fun fetchShop(): ShopInfo
-    suspend fun fetchProducts(): List<Product>
+    suspend fun fetchProducts(category: Category): List<Product>
     suspend fun fetchCategories(): List<Category>
     suspend fun fetchPromotions(): List<Promotion>
     suspend fun fetchOrderCount(): Flow<Int>
-    suspend fun getBasketItemsJSON(): String
-    suspend fun setBasketItemsJSON(json: String)
+    fun getBasketItemsFlow(): Flow<Map<Int, Int>>
+    suspend fun removeFromBasketItem(id: Int)
+    suspend fun addToBasketItem(id: Int)
+    suspend fun setSelectionToBasketItem(id: Int, selected: Int)
     suspend fun selectMenu(menu: Menu)
     suspend fun isMenuSelected(): Boolean
     suspend fun getAvailableMenus(): List<Menu>
@@ -39,8 +43,8 @@ internal class ListRepositoryImpl @Inject constructor(
     private val preferencesManager: PreferencesManager
 ) : ShopRepository {
 
-    override suspend fun getProductsObserver() = withContext(dispatchersProvider.getIO()) {
-        inseatApi.observeProducts()
+    override suspend fun getProductsObserver(category: Category) = withContext(dispatchersProvider.getIO()) {
+        inseatApi.observeProducts(category)
     }
 
     override suspend fun getShopObserver() = withContext(dispatchersProvider.getIO()) {
@@ -51,8 +55,8 @@ internal class ListRepositoryImpl @Inject constructor(
         inseatApi.fetchShop()
     }
 
-    override suspend fun fetchProducts(): List<Product> = withContext(dispatchersProvider.getIO()) {
-        inseatApi.fetchProducts()
+    override suspend fun fetchProducts(category: Category): List<Product> = withContext(dispatchersProvider.getIO()) {
+        inseatApi.fetchProducts(category = category)
     }
 
     override suspend fun fetchPromotions(): List<Promotion> = withContext(dispatchersProvider.getIO()) {
@@ -63,12 +67,30 @@ internal class ListRepositoryImpl @Inject constructor(
         return preferencesManager.read(AUTO_REFRESH, true)
     }
 
-    override suspend fun getBasketItemsJSON(): String {
-        return preferencesManager.read(BASKET, "")
+    override fun getBasketItemsFlow(): Flow<Map<Int, Int>> = preferencesManager.asFlow(BASKET, "{}")
+        .map { Json.decodeFromString<Map<Int, Int>>(it) }
+
+    override suspend fun addToBasketItem(id: Int) {
+        val basket = Json.decodeFromString<Map<Int, Int>>(preferencesManager.read(BASKET, "{}")).toMutableMap()
+        basket[id] = (basket[id] ?: 0) + 1
+        preferencesManager.write(BASKET, Json.encodeToString(basket))
     }
 
-    override suspend fun setBasketItemsJSON(json: String) {
-        preferencesManager.write(BASKET, json)
+    override suspend fun removeFromBasketItem(id: Int) {
+        val basket = Json.decodeFromString<Map<Int, Int>>(preferencesManager.read(BASKET, "{}")).toMutableMap()
+        val quantity = (basket[id] ?: 0) - 1
+        if (quantity > 0)
+            basket[id] = quantity
+        else {
+            basket.remove(id)
+        }
+        preferencesManager.write(BASKET, Json.encodeToString(basket))
+    }
+
+    override suspend fun setSelectionToBasketItem(id: Int, selected: Int) {
+        val basket = Json.decodeFromString<Map<Int, Int>>(preferencesManager.read(BASKET, "{}")).toMutableMap()
+        basket[id] = selected
+        preferencesManager.write(BASKET, Json.encodeToString(basket))
     }
 
     override suspend fun selectMenu(menu: Menu) {

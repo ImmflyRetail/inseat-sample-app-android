@@ -425,7 +425,6 @@ private fun ProductItem(
             val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
             Box(
                 modifier = Modifier
-                    .weight(1f)
                     .wrapContentHeight()
                     .wrapContentWidth()
                     .background(Color(0xFFFFFFFF), shape = RoundedCornerShape(size = 8.dp))

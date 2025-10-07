@@ -4,7 +4,6 @@ import android.app.Application
 import com.immflyretail.inseat.sampleapp.preferences.api.preferencesmanager.BASKET
 import com.immflyretail.inseat.sampleapp.preferences.api.preferencesmanager.PreferencesManager
 import com.immflyretail.inseat.sdk.api.InseatApi
-import com.immflyretail.inseat.sdk.api.NetworkException
 import com.immflyretail.inseat.sdk.api.models.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.runBlocking
@@ -35,12 +34,6 @@ class MainApplication : Application() {
                     environment = Environment.TEST,
                 )
             )
-
-            try {
-                api.syncProductData()
-            } catch (e: NetworkException) {
-                Timber.e("Network error: ${e.message}")
-            }
 
             // cleanup old basket data
             prefManager.remove(BASKET)

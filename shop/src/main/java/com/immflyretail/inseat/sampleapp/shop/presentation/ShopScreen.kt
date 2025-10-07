@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -29,15 +28,15 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.TextField
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SecondaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -63,10 +62,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenResultKey
 import com.immflyretail.inseat.sampleapp.core.extension.execute
-import com.immflyretail.inseat.sampleapp.product_api.ProductScreenResultKey
-import com.immflyretail.inseat.sampleapp.product_api.ProductScreenResult
 import com.immflyretail.inseat.sampleapp.shop.R
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopItem
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopStatus
@@ -91,7 +87,6 @@ import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_18_26
 import com.immflyretail.inseat.sampleapp.ui.Loading
 import com.immflyretail.inseat.sampleapp.ui.Screen
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
-import com.immflyretail.inseat.sdk.api.models.Category
 import com.immflyretail.inseat.sdk.api.models.Menu
 import com.immflyretail.inseat.sdk.api.models.Promotion
 import kotlinx.coroutines.delay
@@ -184,32 +179,6 @@ fun ShopScreen(
         }
 
         BackHandler { viewModel.obtainEvent(ShopScreenEvent.OnBackClicked) }
-
-        val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle!!
-        val productUpdatesObserver = savedStateHandle.getStateFlow(
-            ProductScreenResultKey.REFRESHED_PRODUCT.name,
-            ProductScreenResult()
-        )
-        val basketUpdatesObserver = savedStateHandle.getStateFlow(
-            BasketScreenResultKey.PRODUCTS_IN_BASKET_REFRESHED.name,
-            initialValue = false
-        )
-
-        SingleEventEffect(productUpdatesObserver) { result ->
-            if (result.productId != -1) {
-                viewModel.obtainEvent(
-                    ShopScreenEvent.OnProductUpdated(result.productId, result.selectedAmount)
-                )
-                savedStateHandle.remove<ProductScreenResult>(ProductScreenResultKey.REFRESHED_PRODUCT.name)
-            }
-        }
-
-        SingleEventEffect(basketUpdatesObserver) { result ->
-            if (result == true) {
-                viewModel.obtainEvent(ShopScreenEvent.ItemInBasketUpdated)
-                savedStateHandle.remove<Boolean>(BasketScreenResultKey.PRODUCTS_IN_BASKET_REFRESHED.name)
-            }
-        }
     }
 }
 
@@ -515,7 +484,7 @@ private fun PromotionsList(
 ) {
     LazyColumn(
         contentPadding = PaddingValues(top = 24.dp, start = 16.dp, end = 16.dp, bottom = 54.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
@@ -621,19 +590,18 @@ private fun ListItem(
 
             Box(
                 modifier = Modifier
-                    .wrapContentWidth()
+                    .fillMaxWidth()
                     .height(150.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.CenterEnd
+                contentAlignment = Alignment.BottomEnd
             ) {
                 val decodedBytes =
                     Base64.decode(item.product.base64Image.encodeToByteArray(), Base64.DEFAULT)
                 val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
                 Image(
                     modifier = Modifier
-                        .wrapContentWidth()
-                        .wrapContentHeight()
+                        .fillMaxSize()
                         .padding(8.dp),
                     painter = if (bitmap != null) {
                         BitmapPainter(image = bitmap.asImageBitmap())

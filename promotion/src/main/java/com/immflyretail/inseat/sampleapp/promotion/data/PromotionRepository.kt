@@ -39,11 +39,8 @@ internal class PromotionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun addToBasket(items: List<PromotionItem>) {
-        val basket = try {
-            Json.decodeFromString<Map<Int, Int>>(preferencesManager.read(BASKET, "")).toMutableMap()
-        } catch (e: Exception) {
-            mutableMapOf()
-        }
+        val basket = Json.decodeFromString<Map<Int, Int>>(preferencesManager.read(BASKET, "{}")).toMutableMap()
+
         items.forEach { item ->
             basket[item.product.itemId] = (basket[item.product.itemId] ?: 0) + item.selectedQuantity
         }
