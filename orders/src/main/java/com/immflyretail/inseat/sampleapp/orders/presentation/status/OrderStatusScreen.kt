@@ -51,9 +51,11 @@ import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16_24
 import com.immflyretail.inseat.sampleapp.ui.Loading
 import com.immflyretail.inseat.sampleapp.ui.Screen
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
+import com.immflyretail.inseat.sdk.api.models.AppliedPromotion
 import com.immflyretail.inseat.sdk.api.models.Order
 import com.immflyretail.inseat.sdk.api.models.OrderItem
 import com.immflyretail.inseat.sdk.api.models.OrderStatusEnum
+import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -114,15 +116,16 @@ private fun ContentScreen(
         OrderStatus(uiState.order.status)
         OrderDetails(
             order = uiState.order,
-            onDetailsClicked = { },
-            onCancelOrderClicked = { eventReceiver(OrderStatusScreenEvent.OnCancelOrderClicked(it)) },
+            onDetailsClicked = { }
         )
-        OrderCancellation()
+        if (uiState.order.status == OrderStatusEnum.PLACED || uiState.order.status == OrderStatusEnum.RECEIVED) {
+            OrderCancellation(onCancelOrderClicked = { eventReceiver(OrderStatusScreenEvent.OnCancelOrderClicked) })
+        }
     }
 }
 
 @Composable
-fun OrderStatus(status: OrderStatusEnum ,modifier: Modifier = Modifier) {
+fun OrderStatus(status: OrderStatusEnum, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -193,8 +196,7 @@ fun OrderStatusItem(name: String, isActive: Boolean, modifier: Modifier = Modifi
 private fun OrderDetails(
     order: Order,
     modifier: Modifier = Modifier,
-    onDetailsClicked: () -> Unit,
-    onCancelOrderClicked: (String) -> Unit,
+    onDetailsClicked: () -> Unit
 ) {
     Column(
         modifier = modifier
@@ -277,6 +279,55 @@ private fun OrderDetails(
             thickness = 1.dp
         )
 
+        val savings = order.appliedPromotions.sumOf {
+            (it.benefitType as? AppliedPromotion.BenefitType.Discount)?.totalSavings?.amount ?: BigDecimal.ZERO
+        }
+        val total = order.totalPrice - savings
+
+        if (savings > BigDecimal.ZERO) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+                    .clickable { onDetailsClicked.invoke() },
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = stringResource(R.string.subtotal),
+                    style = B_14,
+                    color = Color(0xFF333333),
+                )
+
+                Text(
+                    text = "${order.totalPrice} ${order.currency}",
+                    style = B_14,
+                    color = Color(0xFF333333),
+                    textAlign = TextAlign.Right,
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+                    .clickable { onDetailsClicked.invoke() },
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = stringResource(R.string.savings),
+                    style = B_14,
+                    color = Color(0xFF333333),
+                )
+
+                Text(
+                    text = "-${savings} ${order.currency}",
+                    style = B_14,
+                    color = Color(0xFF109C42),
+                    textAlign = TextAlign.Right,
+                )
+            }
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -290,7 +341,7 @@ private fun OrderDetails(
             )
 
             Text(
-                text = "${order.totalPrice} ${order.currency}",
+                text = "${total} ${order.currency}",
                 style = B_18,
                 color = Color(0xFF333333),
                 textAlign = TextAlign.Right,
@@ -341,7 +392,7 @@ private fun ProductItem(
 
 
 @Composable
-fun OrderCancellation(modifier: Modifier = Modifier) {
+fun OrderCancellation(modifier: Modifier = Modifier, onCancelOrderClicked: () -> Unit) {
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -357,11 +408,14 @@ fun OrderCancellation(modifier: Modifier = Modifier) {
         )
 
         Text(
-            modifier = Modifier.padding(top = 10.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(top = 10.dp)
+                .fillMaxWidth()
+                .clickable { onCancelOrderClicked.invoke() },
             text = stringResource(R.string.order_status_cancel_order),
             style = B_14,
             color = Color(0xFFDD083A),
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
         )
     }
 }

@@ -5,6 +5,8 @@
     <string name="details">Details</string>
     <string name="order_id">Order ID</string>
     <string name="total">Total</string>
+    <string name="subtotal">Subtotal</string>
+    <string name="savings">Savings</string>
     <string name="order_status_your_order_s_in">Your order’s in!</string>
     <string name="order_status_order_placed">Placed</string>
     <string name="order_status_in_preparation">In preparation</string>

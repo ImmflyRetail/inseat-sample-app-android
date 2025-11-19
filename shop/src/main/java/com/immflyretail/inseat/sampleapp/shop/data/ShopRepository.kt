@@ -11,7 +11,6 @@ import com.immflyretail.inseat.sdk.api.models.Product
 import com.immflyretail.inseat.sdk.api.models.Promotion
 import com.immflyretail.inseat.sdk.api.models.ShopInfo
 import com.immflyretail.inseat.sdk.api.models.UserData
-import com.immflyretail.inseat.sdk.impl.c
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -44,6 +43,7 @@ internal class ListRepositoryImpl @Inject constructor(
 ) : ShopRepository {
 
     override suspend fun getProductsObserver(category: Category) = withContext(dispatchersProvider.getIO()) {
+        println("azazazaz Observing products for category: ${category.name}")
         inseatApi.observeProducts(category)
     }
 
@@ -56,10 +56,12 @@ internal class ListRepositoryImpl @Inject constructor(
     }
 
     override suspend fun fetchProducts(category: Category): List<Product> = withContext(dispatchersProvider.getIO()) {
+        println("azazazaz Fetching products for category: ${category.name}")
         inseatApi.fetchProducts(category = category)
     }
 
     override suspend fun fetchPromotions(): List<Promotion> = withContext(dispatchersProvider.getIO()) {
+        println("azazazaz FetchPromotions")
         inseatApi.fetchPromotions()
     }
 

@@ -29,10 +29,10 @@ class OrderStatusScreenViewModel @Inject constructor(
 
     private val _uiAction = Channel<OrderStatusScreenAction>()
     val uiAction: Flow<OrderStatusScreenAction> get() = _uiAction.receiveAsFlow()
+    private val orderId: String = savedStateHandle.toRoute<OrdersScreenContract.OrderStatusRoute>().orderId
 
 
     init {
-        val orderId = savedStateHandle.toRoute<OrdersScreenContract.OrderStatusRoute>().orderId
         loadData(orderId)
     }
 
@@ -45,7 +45,7 @@ class OrderStatusScreenViewModel @Inject constructor(
             is OrderStatusScreenEvent.OnCancelOrderClicked -> {
                 _uiState.value = OrderStatusScreenState.Loading
                 runCoroutine {
-                    repository.cancelOrder(event.orderId) { result ->
+                    repository.cancelOrder(orderId) { result ->
                         result
                             .onSuccess {
                                 _uiState.value = state

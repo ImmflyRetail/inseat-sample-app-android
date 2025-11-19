@@ -669,55 +669,88 @@ private fun PromotionItem(
             .clickable { eventReceiver(ShopScreenEvent.OnPromotionClicked(item.promotionId)) },
     ) {
         Box(modifier = modifier.fillMaxSize()) {
-            Column(
+            Row(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .background(MaterialTheme.colorScheme.primaryContainer)
                     .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.Start
+                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    modifier = Modifier.fillMaxWidth(),
-                    text = item.name,
-                    style = B_16_24,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = Color(0xFF333333)
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = item.name,
+                        style = B_16_24,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = Color(0xFF333333)
+                    )
 
-                Text(
-                    modifier = Modifier.fillMaxWidth(),
-                    text = item.discountText,
-                    style = N_14_22,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    color = Color(0xFF666666)
-                )
+                    Text(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = item.discountText,
+                        style = N_14_22,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        color = Color(0xFF666666)
+                    )
 
-                val discount = item.discounts.firstOrNull { it.currency == currency }
-                var textColor = Color(0xFF109C42)
-                val savings = when (item.benefitType) {
-                    Promotion.BenefitType.DISCOUNT -> when (item.discountType) {
-                        Promotion.DiscountType.PERCENTAGE -> discount?.discount.toString() + "% OFF"
-                        Promotion.DiscountType.AMOUNT -> discount?.discount.toString() + "$currency OFF"
-                        Promotion.DiscountType.FIXED_PRICE -> {
-                            textColor = Color(0xFF333333)
-                            discount?.discount.toString() + currency
+                    val discount = item.discounts.firstOrNull { it.currency == currency }
+                    var textColor = Color(0xFF109C42)
+                    val savings = when (item.benefitType) {
+                        Promotion.BenefitType.DISCOUNT -> when (item.discountType) {
+                            Promotion.DiscountType.PERCENTAGE -> discount?.discount.toString() + "% OFF"
+                            Promotion.DiscountType.AMOUNT -> discount?.discount.toString() + "$currency OFF"
+                            Promotion.DiscountType.FIXED_PRICE -> {
+                                textColor = Color(0xFF333333)
+                                discount?.discount.toString() + currency
+                            }
+
+                            Promotion.DiscountType.COUPON -> "Get a voucher"
                         }
 
-                        Promotion.DiscountType.COUPON -> "Get a voucher"
+                        Promotion.BenefitType.COUPON -> "Get a voucher"
                     }
-
-                    Promotion.BenefitType.COUPON -> "Get a voucher"
+                    Text(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = savings,
+                        style = B_18_26,
+                        color = textColor
+                    )
                 }
-                Text(
-                    modifier = Modifier.fillMaxWidth(),
-                    text = savings,
-                    style = B_18_26,
-                    color = textColor
-                )
+                val bitmap = try {
+                    val decodedBytes =
+                        Base64.decode(item.base64image?.encodeToByteArray() ?: byteArrayOf(), Base64.DEFAULT)
+                    BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size).asImageBitmap()
+                } catch (e: Exception) {
+                    null
+                }
+
+                if (bitmap != null) {
+                    Image(
+                        modifier = Modifier
+                            .width(106.dp)
+                            .height(90.dp),
+                        bitmap = bitmap,
+                        contentDescription = "Product image"
+                    )
+                } else {
+                    Image(
+                        modifier = Modifier
+                            .width(106.dp)
+                            .height(90.dp),
+                        painter = painterResource(R.drawable.placeholder_image),
+                        contentDescription = "Product image"
+                    )
+                }
             }
             Box(
                 modifier = modifier
