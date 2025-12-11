@@ -94,6 +94,7 @@ import kotlinx.coroutines.launch
 import com.immflyretail.inseat.sampleapp.ui.R as uiR
 
 private val statusRawHeight = 44.dp
+private const val currency = "EUR"
 
 fun NavGraphBuilder.shopScreen(navController: NavController) {
     composable<ShopScreenContract.Route> {
@@ -634,7 +635,7 @@ private fun ListItem(
                 color = textColor,
             )
 
-            val priceData = item.product.prices.first()
+            val priceData = item.product.prices.find { it.currency == currency } ?: item.product.prices.first()
             val textStyle = N_12_20.copy(color = textColor)
 
             Text(
