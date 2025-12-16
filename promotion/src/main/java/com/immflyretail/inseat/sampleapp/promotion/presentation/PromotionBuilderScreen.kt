@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -422,7 +423,13 @@ private fun ProductItem(
 
             val decodedBytes =
                 Base64.decode(item.base64Image.encodeToByteArray(), Base64.DEFAULT)
-            val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+            val bitmap = try {
+                BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size).asImageBitmap()
+            } catch (e: Exception){
+                e.printStackTrace()
+                null
+            }
+
             Box(
                 modifier = Modifier
                     .wrapContentHeight()
@@ -434,7 +441,11 @@ private fun ProductItem(
                     modifier = Modifier
                         .width(106.dp)
                         .height(90.dp),
-                    bitmap = bitmap.asImageBitmap(),
+                    painter = if (bitmap != null) {
+                        BitmapPainter(image = bitmap)
+                    } else {
+                        painterResource(R.drawable.placeholder_image)
+                    },
                     contentDescription = "Product image"
                 )
             }

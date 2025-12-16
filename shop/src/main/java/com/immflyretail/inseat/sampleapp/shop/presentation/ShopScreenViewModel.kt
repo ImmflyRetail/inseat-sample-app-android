@@ -47,7 +47,7 @@ class ShopScreenViewModel @Inject constructor(
     private var ordersCount = 0
     private var tabs: List<TabItem> = emptyList()
     private var selectedTab: TabItem? = null
-    private val tabDataObservers = mutableMapOf<Int, StateFlow<List<ShopItem>>>()
+    private var tabDataObserver: StateFlow<List<ShopItem>> = MutableStateFlow(emptyList())
 
     init {
         runCoroutine {
@@ -133,26 +133,30 @@ class ShopScreenViewModel @Inject constructor(
                 val currentState = _uiState.value as? ShopScreenState.DataLoaded ?: return@runCoroutine
                 selectedTab = event.tab
 
-                val tabItems = when (val tab = event.tab) {
+                when (val tab = event.tab) {
                     is TabItem.CategoryTab -> {
-                        tabDataObservers.getOrPut(tab.getTabId()) {
-                            repository.getProductsObserver(tab.category)
-                                .map { items ->
-                                    items.map {
-                                        ShopItem(it, selectedItems.getOrDefault(it.itemId, 0))
-                                    }
+                        tabDataObserver = repository.getProductsObserver(tab.category)
+                            .map { items ->
+                                items.map {
+                                    ShopItem(it, selectedItems.getOrDefault(it.itemId, 0))
                                 }
-                                .stateIn(viewModelScope)
-                        }.value
+                            }
+                            .onEach { tabItems ->
+                                _uiState.value = currentState.copy(
+                                    selectedTabIndex = event.selectedTabIndex,
+                                    items = tabItems
+                                )
+                            }
+                            .stateIn(viewModelScope)
                     }
 
-                    else -> emptyList()
+                    is TabItem.PromotionTab -> {
+                        _uiState.value = currentState.copy(
+                            selectedTabIndex = event.selectedTabIndex,
+                            items = emptyList()
+                        )
+                    }
                 }
-
-                _uiState.value = currentState.copy(
-                    selectedTabIndex = event.selectedTabIndex,
-                    items = tabItems
-                )
             }
 
             is ShopScreenEvent.OnSearch -> {

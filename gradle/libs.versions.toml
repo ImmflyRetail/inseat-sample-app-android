@@ -33,7 +33,7 @@ timber = "5.0.1"
 kotlinxSerialization = "1.9.0"
 uiTextGoogleFonts = "1.9.0"
 splashscreen = "1.0.1"
-inseat = "0.1.24"
+inseat = "0.1.25"
 
 [libraries]
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
