@@ -260,7 +260,16 @@ class ShopScreenViewModel @Inject constructor(
 
         launch {
             repository.getShopObserver()
-                .onEach { shopInfo -> updateShopStatus(shopInfo) }
+                .onEach { shopInfo ->
+                    val needRefreshPromo =
+                        shopInfo is DefaultShop && shopStatus != ShopStatus.DEFAULT || shopInfo is Shop && shopStatus == ShopStatus.DEFAULT
+
+                    if (needRefreshPromo) {
+                        updatePromotions()
+                    }
+
+                    updateShopStatus(shopInfo)
+                }
                 .collect()
         }
 
@@ -297,6 +306,27 @@ class ShopScreenViewModel @Inject constructor(
             itemsInBasket = getItemsInBasketCount(),
             ordersCount = ordersCount
         )
+    }
+
+    private suspend fun updatePromotions(){
+        val newPromo = repository.fetchPromotions()
+        val updatedTabs = tabs.map { tab ->
+            when (tab) {
+                is TabItem.PromotionTab -> tab.copy(promotions = newPromo)
+                else -> tab
+            }
+        }
+        tabs = updatedTabs
+
+        // check it selected tab is promotion tab to update ui state
+        if (selectedTab is TabItem.PromotionTab) {
+           selectedTab = tabs.find { it is TabItem.PromotionTab }
+        }
+
+        _uiState.value = (_uiState.value as? ShopScreenState.DataLoaded)?.copy(
+            tabs = tabs,
+            selectedTabIndex = tabs.indexOfFirst { it == selectedTab }
+        ) ?: _uiState.value
     }
 
     private fun updateShopStatus(shopInfo: ShopInfo) {
