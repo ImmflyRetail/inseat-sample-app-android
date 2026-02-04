@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,6 +22,10 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -53,8 +56,10 @@ import com.immflyretail.inseat.sampleapp.promotion.R
 import com.immflyretail.inseat.sampleapp.promotion.presentation.model.PromotionBlock
 import com.immflyretail.inseat.sampleapp.promotion.presentation.model.PromotionItem
 import com.immflyretail.inseat.sampleapp.promotion_api.PromotionContract
+import com.immflyretail.inseat.sampleapp.ui.AppButton
+import com.immflyretail.inseat.sampleapp.ui.AppIconButton
+import com.immflyretail.inseat.sampleapp.ui.AppScaffold
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
-import com.immflyretail.inseat.sampleapp.ui.InseatButton
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_10
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14_22
@@ -64,14 +69,14 @@ import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_12_20
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16_24
 import com.immflyretail.inseat.sampleapp.ui.Loading
-import com.immflyretail.inseat.sampleapp.ui.Screen
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
+import com.immflyretail.inseat.sampleapp.ui.utils.IconWrapper
 import com.immflyretail.inseat.sdk.api.models.Money
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.min
+import com.immflyretail.inseat.sampleapp.core.resources.R as CoreR
 
-private val statusRawHeight = 44.dp
 private var currency: String = ""
 
 fun NavGraphBuilder.promotionBuilderScreen(navController: NavController) {
@@ -89,11 +94,10 @@ fun PromotionBuilder(
     viewModel: PromotionBuilderScreenViewModel,
     navController: NavController
 ) {
-    Screen(
+    AppScaffold(
         modifier = Modifier.background(color = MaterialTheme.colorScheme.background),
         title = (uiState as? PromotionBuilderScreenState.DataLoaded)?.title.orEmpty(),
-        isBackButtonEnabled = false,
-        hasTopBar = false
+        onBackClicked = { viewModel.obtainEvent(PromotionBuilderScreenEvent.OnBackClicked) },
     ) {
         when (uiState) {
             is PromotionBuilderScreenState.Loading -> Loading()
@@ -102,7 +106,9 @@ fun PromotionBuilder(
                 MainData(uiState, viewModel::obtainEvent)
             }
 
-            is PromotionBuilderScreenState.Error -> ErrorScreen(uiState.message ?: "Error")
+            is PromotionBuilderScreenState.Error -> ErrorScreen(
+                uiState.message ?: stringResource(id = R.string.promotion_builder_error_message)
+            )
         }
 
         SingleEventEffect(viewModel.uiAction) { action ->
@@ -124,27 +130,6 @@ fun MainData(
     Column(
         modifier = modifier.fillMaxSize()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFFFFFFF))
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(Modifier)
-            Text(
-                text = uiState.title,
-                style = B_18_26
-            )
-            Icon(
-                painterResource(R.drawable.ic_close),
-                contentDescription = "Close screen",
-                modifier = Modifier.clickable { eventReceiver(PromotionBuilderScreenEvent.OnBackClicked) }
-            )
-        }
-
-
         LazyColumn(
             contentPadding = PaddingValues(top = 24.dp, start = 16.dp, end = 16.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
@@ -160,7 +145,8 @@ fun MainData(
                     SpendLimitProgress(
                         spendLimit = triggerType.haveToSpend,
                         selectedAmount = uiState.blocks.sumOf {
-                            (it as? PromotionBlock.SpendLimitBlock)?.selectedItemsPrice ?: BigDecimal.ZERO
+                            (it as? PromotionBlock.SpendLimitBlock)?.selectedItemsPrice
+                                ?: BigDecimal.ZERO
                         }
                     )
                 }
@@ -174,10 +160,11 @@ fun MainData(
             }
 
             item {
-                InseatButton(
-                    text = "Add to basket",
+                AppButton(
+                    text = stringResource(id = R.string.promotion_builder_add_to_basket_button),
                     onClick = { eventReceiver(PromotionBuilderScreenEvent.AddToCartClicked) },
-                    isEnabled = uiState.isCompleted
+                    isEnabled = uiState.isCompleted,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -185,7 +172,12 @@ fun MainData(
 }
 
 @Composable
-fun PromotionInfo(title: String, savings: String, description: String, modifier: Modifier = Modifier) {
+fun PromotionInfo(
+    title: String,
+    savings: String,
+    description: String,
+    modifier: Modifier = Modifier
+) {
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -217,11 +209,13 @@ fun PromotionInfo(title: String, savings: String, description: String, modifier:
 }
 
 @Composable
-fun SpendLimitProgress(spendLimit: Money, selectedAmount: BigDecimal, modifier: Modifier = Modifier) {
+fun SpendLimitProgress(
+    spendLimit: Money,
+    selectedAmount: BigDecimal,
+    modifier: Modifier = Modifier
+) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(72.dp)
+        modifier = modifier.fillMaxWidth()
     ) {
         Box(
             modifier = Modifier
@@ -230,7 +224,12 @@ fun SpendLimitProgress(spendLimit: Money, selectedAmount: BigDecimal, modifier: 
                 .padding(16.dp),
         ) {
             LinearProgressIndicator(
-                progress = { min(selectedAmount.divide(spendLimit.amount, 2, RoundingMode.HALF_EVEN).toFloat(), 1f) },
+                progress = {
+                    min(
+                        selectedAmount.divide(spendLimit.amount, 2, RoundingMode.HALF_EVEN)
+                            .toFloat(), 1f
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp),
@@ -263,7 +262,10 @@ fun SpendLimitProgress(spendLimit: Money, selectedAmount: BigDecimal, modifier: 
                         color = Color(0xFF333333)
                     )
 
-                    Image(painterResource(id = R.drawable.ic_green_compete), contentDescription = "Completed")
+                    Image(
+                        painterResource(id = CoreR.drawable.ic_order_success),
+                        contentDescription = stringResource(id = CoreR.string.completed)
+                    )
                 }
             }
 
@@ -297,7 +299,10 @@ fun PromotionBlock(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Select ${block.expectedSelectedItems} item",
+                        text = stringResource(
+                            id = R.string.promotion_builder_select_item_title,
+                            block.expectedSelectedItems
+                        ),
                         style = B_18_26,
                         color = Color(0xFF333333),
                     )
@@ -315,16 +320,16 @@ fun PromotionBlock(
                     }
                     Row(
                         modifier = Modifier
-                            .height(24.dp)
-                            .background(labelBackgroundColor, shape = RoundedCornerShape(24.dp))
+                            .background(labelBackgroundColor, shape = CircleShape)
                             .padding(8.dp),
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         if (isCompleted) {
-                            Image(
+                            Icon(
                                 modifier = Modifier.size(16.dp),
-                                painter = painterResource(R.drawable.ic_check),
-                                contentDescription = "Completed"
+                                imageVector = Icons.Outlined.Check,
+                                tint = Color(0xFF109C42),
+                                contentDescription = stringResource(id = CoreR.string.completed)
                             )
                         } else {
                             Text(
@@ -336,7 +341,7 @@ fun PromotionBlock(
                         }
 
                         Text(
-                            text = "Required",
+                            text = stringResource(id = R.string.promotion_builder_required_label),
                             style = B_10,
                             color = labelTextColor,
                             textAlign = TextAlign.Center,
@@ -359,7 +364,7 @@ private fun PromotionsList(
     modifier: Modifier = Modifier
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
@@ -379,7 +384,6 @@ private fun ProductItem(
     val item = promotionItem.product
     Box(
         modifier = modifier
-            .height(106.dp)
             .fillMaxWidth()
             .wrapContentHeight()
             .clickable { eventReceiver(PromotionBuilderScreenEvent.OnAddItemClicked(item.itemId)) },
@@ -407,6 +411,7 @@ private fun ProductItem(
                 Text(
                     text = item.description,
                     style = N_12_20,
+                    minLines = 2,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     color = Color(0xFF666666)
@@ -425,7 +430,7 @@ private fun ProductItem(
                 Base64.decode(item.base64Image.encodeToByteArray(), Base64.DEFAULT)
             val bitmap = try {
                 BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size).asImageBitmap()
-            } catch (e: Exception){
+            } catch (e: Exception) {
                 e.printStackTrace()
                 null
             }
@@ -444,9 +449,9 @@ private fun ProductItem(
                     painter = if (bitmap != null) {
                         BitmapPainter(image = bitmap)
                     } else {
-                        painterResource(R.drawable.placeholder_image)
+                        painterResource(CoreR.drawable.im_food_placeholder)
                     },
-                    contentDescription = "Product image"
+                    contentDescription = stringResource(id = R.string.promotion_builder_item_image_content_description)
                 )
             }
         }
@@ -507,9 +512,9 @@ fun OutOfStockIcon(modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically
     ) {
+
         Box(
             modifier = Modifier
-                .height(14.dp)
                 .wrapContentWidth()
                 .clip(RoundedCornerShape(14.dp))
                 .background(Color(0xFFF8F8F8)),
@@ -517,26 +522,20 @@ fun OutOfStockIcon(modifier: Modifier = Modifier) {
         ) {
             Text(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                text = stringResource(R.string.out_of_stock),
+                text = stringResource(CoreR.string.out_of_stock),
                 style = N_10,
                 color = Color(0xFFD40E14),
                 textAlign = TextAlign.Center,
             )
         }
-        Box(
-            modifier = Modifier
-                .padding(start = 16.dp)
-                .size(24.dp)
-                .clip(CircleShape)
-                .background(Color(0xFFF8F8F8)),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                modifier = Modifier.size(12.dp),
-                painter = painterResource(id = R.drawable.ic_plus_dissabled),
-                contentDescription = "Not selected"
-            )
-        }
+
+        AppIconButton(
+            icon = IconWrapper.Vector(Icons.Outlined.Add),
+            onClick = { },
+            isEnabled = false,
+            contentDescriptionId = CoreR.string.not_selected_content_description,
+            modifier = Modifier.size(32.dp)
+        )
     }
 }
 
@@ -546,20 +545,13 @@ fun NotSelectedIcon(
     eventReceiver: (PromotionBuilderScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .size(24.dp)
-            .clip(CircleShape)
-            .background(Color(0xFFE2E2E2))
-            .clickable { eventReceiver(PromotionBuilderScreenEvent.OnAddItemClicked(itemId)) },
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            modifier = Modifier.size(12.dp),
-            painter = painterResource(id = R.drawable.ic_plus),
-            contentDescription = "Not selected",
-        )
-    }
+    AppIconButton(
+        icon = IconWrapper.Vector(Icons.Outlined.Add),
+        onClick = { eventReceiver(PromotionBuilderScreenEvent.OnAddItemClicked(itemId)) },
+        containerColor = Color(0xFFE2E2E2),
+        contentDescriptionId = CoreR.string.add_item_content_description,
+        modifier = modifier.size(32.dp)
+    )
 }
 
 @Composable
@@ -571,35 +563,31 @@ fun SelectedIcon(
 ) {
     Row(
         modifier = modifier
-            .height(24.dp)
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
             .background(Color(0xFFE2E2E2)),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Image(
-            modifier = Modifier
-                .padding(start = 6.dp)
-                .width(13.dp)
-                .height(14.dp)
-                .clickable { eventReceiver(PromotionBuilderScreenEvent.OnRemoveItemClicked(itemId)) },
-            painter = painterResource(id = R.drawable.ic_remove),
-            contentDescription = "Not selected"
+        AppIconButton(
+            icon = IconWrapper.Vector(Icons.Outlined.Remove),
+            onClick = { eventReceiver(PromotionBuilderScreenEvent.OnRemoveItemClicked(itemId)) },
+            contentDescriptionId = CoreR.string.remove_item_content_description,
+            modifier = Modifier.size(32.dp)
         )
+
         Text(
             text = selectedQuantity.toString(),
             style = B_14,
             color = Color(0xFF333333),
             textAlign = TextAlign.Center,
         )
-        Image(
-            modifier = Modifier
-                .padding(end = 6.dp)
-                .size(12.dp)
-                .clickable { eventReceiver(PromotionBuilderScreenEvent.OnAddItemClicked(itemId)) },
-            painter = painterResource(id = R.drawable.ic_plus),
-            contentDescription = "Not selected"
+
+        AppIconButton(
+            icon = IconWrapper.Vector(Icons.Outlined.Add),
+            onClick = { eventReceiver(PromotionBuilderScreenEvent.OnAddItemClicked(itemId)) },
+            contentDescriptionId = CoreR.string.add_item_content_description,
+            modifier = Modifier.size(32.dp)
         )
     }
 }
@@ -617,7 +605,6 @@ fun LimitReachedIcon(
     ) {
         Box(
             modifier = Modifier
-                .height(14.dp)
                 .wrapContentWidth()
                 .clip(RoundedCornerShape(14.dp))
                 .background(Color(0xFFF8F8F8)),
@@ -625,7 +612,7 @@ fun LimitReachedIcon(
         ) {
             Text(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                text = stringResource(R.string.limit_reached),
+                text = stringResource(CoreR.string.limit_reached),
                 style = N_10,
                 color = Color(0xFFD40E14),
                 textAlign = TextAlign.Center,
@@ -635,34 +622,33 @@ fun LimitReachedIcon(
         Row(
             modifier = Modifier
                 .padding(top = 8.dp)
-                .height(24.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
                 .background(Color(0xFFE2E2E2)),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Image(
-                modifier = Modifier
-                    .padding(start = 6.dp)
-                    .width(13.dp)
-                    .height(14.dp)
-                    .clickable { eventReceiver(PromotionBuilderScreenEvent.OnRemoveItemClicked(itemId)) },
-                painter = painterResource(id = R.drawable.ic_remove),
-                contentDescription = "Not selected"
+
+            AppIconButton(
+                icon = IconWrapper.Vector(Icons.Outlined.Remove),
+                onClick = { eventReceiver(PromotionBuilderScreenEvent.OnRemoveItemClicked(itemId)) },
+                contentDescriptionId = CoreR.string.remove_item_content_description,
+                modifier = Modifier.size(32.dp)
             )
+
             Text(
                 text = selectedQuantity.toString(),
                 style = B_14,
                 color = Color(0xFF333333),
                 textAlign = TextAlign.Center,
             )
-            Image(
-                modifier = Modifier
-                    .padding(end = 6.dp)
-                    .size(12.dp),
-                painter = painterResource(id = R.drawable.ic_plus_dissabled),
-                contentDescription = "Not selected"
+
+            AppIconButton(
+                icon = IconWrapper.Vector(Icons.Outlined.Add),
+                onClick = { },
+                isEnabled = false,
+                contentDescriptionId = CoreR.string.add_item_content_description,
+                modifier = Modifier.size(32.dp)
             )
         }
     }

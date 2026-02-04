@@ -4,9 +4,6 @@
     <string name="seat_number">Seat number</string>
     <string name="details">Details</string>
     <string name="order_id">Order ID</string>
-    <string name="total">Total</string>
-    <string name="subtotal">Subtotal</string>
-    <string name="savings">Savings</string>
     <string name="order_status_your_order_s_in">Your order’s in!</string>
     <string name="order_status_order_placed">Placed</string>
     <string name="order_status_in_preparation">In preparation</string>
@@ -20,8 +17,7 @@
     <string name="in_preparation">In preparation</string>
     <string name="cancelled">Cancelled</string>
     <string name="refunded">Refunded</string>
-    <string name="hide_order_details">Hide order details</string>
-    <string name="items_for">%1$s items for</string>
-    <string name="view_order_details">View order details</string>
     <string name="view_order_status">View order status</string>
+    <string name="orders_right_arrow_content_description">Right arrow</string>
+    <string name="orders_remove_content_description">Remove</string>
 </resources>

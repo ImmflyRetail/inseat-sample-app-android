@@ -1,19 +1,18 @@
 package com.immflyretail.inseat.sampleapp.checkout.presentation
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,9 +22,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.immflyretail.inseat.sampleapp.checkout.R
-import com.immflyretail.inseat.sampleapp.ui.InseatButton
+import com.immflyretail.inseat.sampleapp.ui.AppButton
+import com.immflyretail.inseat.sampleapp.ui.ButtonStyle
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_24_32
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16
+import com.immflyretail.inseat.sampleapp.core.resources.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,9 +54,9 @@ fun OrderResultDialog(
             ) {
                 Image(
                     painter = if (isOrderSuccess) {
-                        painterResource(R.drawable.ic_order_success)
+                        painterResource(CoreR.drawable.ic_order_success)
                     } else {
-                        painterResource(R.drawable.ic_order_failure)
+                        painterResource(CoreR.drawable.ic_order_failure)
                     },
                     contentDescription = "Order Result",
                     modifier = Modifier.size(48.dp)
@@ -84,35 +85,28 @@ fun OrderResultDialog(
                 )
 
                 Row(
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(top = 8.dp).height(IntrinsicSize.Max),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     if (isOrderSuccess) {
-                        val redColor = Color(0xFFDD083A)
-
-                        OutlinedButton(
+                        AppButton(
+                            style = ButtonStyle.Outlined,
+                            text = stringResource(R.string.order_result_dialog_keep_shopping_button),
                             onClick = onClickClose,
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            border = BorderStroke(1.dp, redColor),
-                            shape = RoundedCornerShape(size = 8.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.order_result_dialog_keep_shopping_button),
-                                style = N_16,
-                                color = redColor
-                            )
-                        }
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                        )
 
-                        InseatButton(
+                        AppButton(
                             text = stringResource(R.string.order_result_dialog_view_order_status_button),
                             onClick = onClickOrderStatus,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
                         )
+
                     } else {
-                        InseatButton(
+                        AppButton(
                             text = stringResource(R.string.order_result_dialog_try_again_button),
                             onClick = onClickClose,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }

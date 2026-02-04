@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.immflyretail.inseat.sampleapp.ui"
+    namespace = "com.immflyretail.inseat.sampleapp.core.resources"
 
     buildFeatures {
         compose = true
@@ -18,6 +18,4 @@ dependencies {
     implementation(libs.coreKtx)
     implementation(libs.appcompat)
     implementation(libs.material)
-
-    implementation(project(Modules.core_resources))
 }

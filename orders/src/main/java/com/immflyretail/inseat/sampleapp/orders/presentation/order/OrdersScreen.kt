@@ -1,8 +1,6 @@
 package com.immflyretail.inseat.sampleapp.orders.presentation.order
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,12 +9,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,14 +30,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -44,10 +41,11 @@ import androidx.navigation.compose.composable
 import com.immflyretail.inseat.sampleapp.core.constants.DATE_FORMAT
 import com.immflyretail.inseat.sampleapp.core.extension.execute
 import com.immflyretail.inseat.sampleapp.orders.R
-import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
-import com.immflyretail.inseat.sampleapp.ui.Loading
-import com.immflyretail.inseat.sampleapp.ui.Screen
 import com.immflyretail.inseat.sampleapp.orders_api.OrdersScreenContract
+import com.immflyretail.inseat.sampleapp.ui.AppButton
+import com.immflyretail.inseat.sampleapp.ui.AppIconButton
+import com.immflyretail.inseat.sampleapp.ui.ButtonStyle
+import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_10
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14_22
@@ -58,12 +56,16 @@ import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_12
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14_22
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16_24
+import com.immflyretail.inseat.sampleapp.ui.Loading
+import com.immflyretail.inseat.sampleapp.ui.AppScaffold
+import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
+import com.immflyretail.inseat.sampleapp.ui.utils.IconWrapper
 import com.immflyretail.inseat.sdk.api.models.Order
 import com.immflyretail.inseat.sdk.api.models.OrderItem
-import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
 import com.immflyretail.inseat.sdk.api.models.OrderStatusEnum
 import java.text.SimpleDateFormat
 import java.util.Locale
+import com.immflyretail.inseat.sampleapp.core.resources.R as CoreR
 
 fun NavGraphBuilder.ordersScreen(navController: NavController) {
     composable<OrdersScreenContract.OrdersListRoute> {
@@ -81,7 +83,7 @@ private fun OrdersScreen(
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
-    Screen(
+    AppScaffold(
         modifier = modifier,
         title = stringResource(R.string.my_orders),
         onBackClicked = { viewModel.obtainEvent(OrdersScreenEvent.OnBackClicked) },
@@ -236,12 +238,11 @@ private fun ExpandedOrder(
         Row(
             modifier = Modifier
                 .padding(bottom = 24.dp)
-                .fillMaxWidth()
-                .clickable { onDetailsClicked.invoke() },
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = stringResource(R.string.total),
+                text = stringResource(CoreR.string.total),
                 style = B_18,
                 color = Color(0xFF333333),
             )
@@ -254,27 +255,13 @@ private fun ExpandedOrder(
             )
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp)
-                .clickable { onDetailsClicked.invoke() },
-            horizontalArrangement = Arrangement.aligned(Alignment.CenterHorizontally),
-        ) {
-
-            Text(
-                text = stringResource(R.string.hide_order_details),
-                style = N_14,
-                color = Color(0xFFDD083A),
-                textDecoration = TextDecoration.Underline,
-            )
-
-            Image(
-                modifier = Modifier.padding(start = 4.dp),
-                painter = painterResource(id = R.drawable.up_arrow),
-                contentDescription = "image description",
-            )
-        }
+        AppButton(
+            style = ButtonStyle.Link,
+            text = stringResource(CoreR.string.hide_order_details),
+            onClick = onDetailsClicked,
+            trailingIcon = IconWrapper.Vector(Icons.Outlined.KeyboardArrowUp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
+        )
     }
 }
 
@@ -317,7 +304,7 @@ private fun CollapsedOrder(
         ) {
 
             Text(
-                text = stringResource(R.string.items_for, order.items.size),
+                text = stringResource(CoreR.string.items_for, order.items.size),
                 style = N_16_24,
                 color = Color(0xFF333333),
             )
@@ -336,32 +323,17 @@ private fun CollapsedOrder(
             thickness = 1.dp
         )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp)
-                .clickable { onDetailsClicked.invoke() },
-            horizontalArrangement = Arrangement.aligned(Alignment.CenterHorizontally),
-        ) {
-            val text = if (order.status == OrderStatusEnum.COMPLETED) {
-                stringResource(R.string.view_order_details)
+        AppButton(
+            style = ButtonStyle.Link,
+            text = if (order.status == OrderStatusEnum.COMPLETED) {
+                stringResource(CoreR.string.view_order_details)
             } else {
                 stringResource(R.string.view_order_status)
-            }
-
-            Text(
-                text = text,
-                style = N_14,
-                color = Color(0xFFDD083A),
-                textDecoration = TextDecoration.Underline,
-            )
-
-            Image(
-                modifier = Modifier.padding(start = 4.dp),
-                painter = painterResource(id = R.drawable.down_arrow),
-                contentDescription = "image description",
-            )
-        }
+            },
+            onClick = onDetailsClicked,
+            trailingIcon = IconWrapper.Vector(Icons.Outlined.KeyboardArrowDown),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
+        )
     }
 }
 
@@ -394,13 +366,12 @@ private fun JustPlacedOrder(
             )
 
             OrderStatus(status = order.status)
-            Image(
-                painterResource(R.drawable.remove),
-                contentDescription = "Remove",
-                modifier = Modifier
-                    .padding(start = 8.dp)
-                    .size(24.dp)
-                    .clickable { eventReceiver(OrdersScreenEvent.OnCancelOrderClicked(order.id)) }
+
+            AppIconButton(
+                icon = IconWrapper.Vector(Icons.Outlined.Delete),
+                onClick = { eventReceiver(OrdersScreenEvent.OnCancelOrderClicked(order.id))  },
+                contentColor = Color(0xFFDD083A),
+                contentDescriptionId = R.string.orders_remove_content_description
             )
         }
 
@@ -412,7 +383,7 @@ private fun JustPlacedOrder(
         ) {
 
             Text(
-                text = stringResource(R.string.items_for,order.items.size),
+                text = stringResource(CoreR.string.items_for,order.items.size),
                 style = N_16_24,
                 color = Color(0xFF333333),
             )
@@ -431,27 +402,13 @@ private fun JustPlacedOrder(
             thickness = 1.dp
         )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp)
-                .clickable { eventReceiver(OrdersScreenEvent.OnDetailsClicked(order.id)) },
-            horizontalArrangement = Arrangement.aligned(Alignment.CenterHorizontally),
-        ) {
-
-            Text(
-                text = stringResource(R.string.view_order_details),
-                style = N_14,
-                color = Color(0xFFDD083A),
-                textDecoration = TextDecoration.Underline,
-            )
-
-            Image(
-                modifier = Modifier.padding(start = 4.dp),
-                painter = painterResource(id = R.drawable.ic_arrow_right_red),
-                contentDescription = "image description",
-            )
-        }
+        AppButton(
+            style = ButtonStyle.Link,
+            text = stringResource(CoreR.string.view_order_details),
+            onClick = { eventReceiver(OrdersScreenEvent.OnDetailsClicked(order.id)) },
+            trailingIcon = IconWrapper.Vector(Icons.Outlined.ChevronRight),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
+        )
     }
 }
 

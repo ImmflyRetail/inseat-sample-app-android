@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="out_of_stock">Out of stock</string>
-    <string name="limit_reached">Limit reached</string>
     <string name="promotion_add_to_cart_button">Add to cart</string>
     <string name="spend_limit_reached">Benefits unlocked!</string>
     <string name="away_to_unlock_benefits">away to unlock benefits</string>
+    <string name="promotion_builder_error_message">Error</string>
+    <string name="promotion_builder_close_screen_content_description">Close screen</string>
+    <string name="promotion_builder_add_to_basket_button">Add to basket</string>
+    <string name="promotion_builder_select_item_title">Select %1$d item</string>
+    <string name="promotion_builder_required_label">Required</string>
+    <string name="promotion_builder_item_image_content_description">Item image</string>
 </resources>

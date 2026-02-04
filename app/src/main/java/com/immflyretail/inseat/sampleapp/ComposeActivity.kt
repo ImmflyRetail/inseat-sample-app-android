@@ -3,6 +3,7 @@ package com.immflyretail.inseat.sampleapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.immflyretail.inseat.sampleapp.ui.theme.ImmseatTheme
@@ -15,7 +16,9 @@ import timber.log.Timber
 @AndroidEntryPoint
 class ComposeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+
         val splashscreen = installSplashScreen()
+        enableEdgeToEdge()
         var keepSplashScreen = true
         super.onCreate(savedInstanceState)
         splashscreen.setKeepOnScreenCondition { keepSplashScreen }

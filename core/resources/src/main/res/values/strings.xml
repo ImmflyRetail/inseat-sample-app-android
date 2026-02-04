@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="total">Total</string>
+    <string name="subtotal">Subtotal</string>
+    <string name="summary">Summary</string>
+    <string name="savings">Savings</string>
+    <string name="items_for">%1$s items for</string>
+    <string name="view_order_details">View order details</string>
+    <string name="hide_order_details">Hide order details</string>
+
+    <string name="limit_reached">Limit reached</string>
+    <string name="out_of_stock">Out of stock</string>
+    <string name="completed">Completed</string>
+
+    <string name="back">Back</string>
+
+    <string name="up_arrow_content_description">Up arrow</string>
+    <string name="down_arrow_content_description">Down arrow</string>
+    <string name="image_content_description">Image</string>
+    <string name="not_selected_content_description">Not selected</string>
+    <string name="error_message">Error</string>
+    <string name="add_item_content_description">Add item</string>
+    <string name="remove_item_content_description">Remove item</string>
+</resources>

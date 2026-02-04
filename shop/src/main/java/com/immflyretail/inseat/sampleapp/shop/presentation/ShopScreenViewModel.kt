@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenContract
 import com.immflyretail.inseat.sampleapp.core.extension.runCoroutine
+import com.immflyretail.inseat.sampleapp.navigation.popBackStackOrFinish
 import com.immflyretail.inseat.sampleapp.orders_api.OrdersScreenContract
 import com.immflyretail.inseat.sampleapp.product_api.ProductScreenContract
 import com.immflyretail.inseat.sampleapp.promotion_api.PromotionContract
@@ -54,7 +55,13 @@ class ShopScreenViewModel @Inject constructor(
             if (repository.isMenuSelected()) {
                 initShop()
             } else {
-                _uiState.value = ShopScreenState.SelectMenu(repository.getAvailableMenus())
+                val availableMenus = repository.getAvailableMenus()
+                if(availableMenus.size == 1) {
+                    repository.selectMenu(availableMenus.first())
+                    initShop()
+                } else {
+                    _uiState.value = ShopScreenState.SelectMenu(availableMenus)
+                }
             }
         }
 
@@ -178,7 +185,7 @@ class ShopScreenViewModel @Inject constructor(
                         isSearchEnabled = false
                     )
                 } else {
-                    _uiAction.send(ShopScreenActions.Navigate { popBackStack() })
+                    _uiAction.send(ShopScreenActions.Navigate { popBackStackOrFinish() })
                 }
             }
 

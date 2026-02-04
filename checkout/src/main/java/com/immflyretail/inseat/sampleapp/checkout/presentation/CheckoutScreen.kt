@@ -1,8 +1,7 @@
 package com.immflyretail.inseat.sampleapp.checkout.presentation
 
-import  androidx.compose.foundation.Image
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +16,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -37,7 +39,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -48,19 +49,21 @@ import com.immflyretail.inseat.sampleapp.checkout.R
 import com.immflyretail.inseat.sampleapp.checkout.presentation.models.BasketItem
 import com.immflyretail.inseat.sampleapp.checkout_api.CheckoutScreenContract
 import com.immflyretail.inseat.sampleapp.core.extension.execute
+import com.immflyretail.inseat.sampleapp.ui.AppButton
+import com.immflyretail.inseat.sampleapp.ui.ButtonStyle
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
-import com.immflyretail.inseat.sampleapp.ui.InseatButton
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_16_24
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_18
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_18_26
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14_22
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16_24
 import com.immflyretail.inseat.sampleapp.ui.Loading
-import com.immflyretail.inseat.sampleapp.ui.Screen
+import com.immflyretail.inseat.sampleapp.ui.AppScaffold
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
+import com.immflyretail.inseat.sampleapp.ui.utils.IconWrapper
 import java.math.BigDecimal
+import com.immflyretail.inseat.sampleapp.core.resources.R as CoreR
 
 fun NavGraphBuilder.checkoutScreen(navController: NavController) {
     composable<CheckoutScreenContract.Route> {
@@ -82,9 +85,9 @@ private fun CheckoutScreen(
     viewModel: CheckoutScreenViewModel,
     modifier: Modifier = Modifier
 ) {
-    Screen(
+    AppScaffold(
         modifier = modifier,
-        title = "Checkout",
+        title = stringResource(id = R.string.checkout_screen_title),
         onBackClicked = { viewModel.obtainEvent(CheckoutScreenEvent.OnBackClicked) },
     ) {
         var showBottomSheet by remember { mutableStateOf(false) }
@@ -189,13 +192,14 @@ private fun ContentScreen(
             item { InfoBlock() }
         }
 
-        InseatButton(
+        AppButton(
             text = stringResource(R.string.order_now),
-            onClick = { onMakeOrderClicked.invoke() },
+            onClick = onMakeOrderClicked,
             isEnabled = isSeatNumberValid,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(16.dp)
+                .fillMaxWidth(),
         )
     }
 }
@@ -216,7 +220,7 @@ private fun ExpandedSummary(
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Text(
-            text = stringResource(R.string.summary),
+            text = stringResource(CoreR.string.summary),
             style = B_18_26,
             color = Color(0xFF333333),
         )
@@ -237,12 +241,11 @@ private fun ExpandedSummary(
         Row(
             modifier = Modifier
                 .padding(bottom = 24.dp)
-                .fillMaxWidth()
-                .clickable { onDetailsClicked.invoke() },
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = stringResource(R.string.subtotal),
+                text = stringResource(CoreR.string.subtotal),
                 style = B_18,
                 color = Color(0xFF333333),
             )
@@ -257,12 +260,11 @@ private fun ExpandedSummary(
         Row(
             modifier = Modifier
                 .padding(bottom = 24.dp)
-                .fillMaxWidth()
-                .clickable { onDetailsClicked.invoke() },
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = stringResource(R.string.savings),
+                text = stringResource(CoreR.string.savings),
                 style = B_18,
                 color = Color(0xFF333333),
             )
@@ -278,12 +280,11 @@ private fun ExpandedSummary(
         Row(
             modifier = Modifier
                 .padding(bottom = 24.dp)
-                .fillMaxWidth()
-                .clickable { onDetailsClicked.invoke() },
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = stringResource(R.string.total),
+                text = stringResource(CoreR.string.total),
                 style = B_18,
                 color = Color(0xFF333333),
             )
@@ -296,27 +297,13 @@ private fun ExpandedSummary(
             )
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp)
-                .clickable { onDetailsClicked.invoke() },
-            horizontalArrangement = Arrangement.aligned(Alignment.CenterHorizontally),
-        ) {
-
-            Text(
-                text = stringResource(R.string.hide_order_details),
-                style = N_14,
-                color = Color(0xFFDD083A),
-                textDecoration = TextDecoration.Underline,
-            )
-
-            Image(
-                modifier = Modifier.padding(start = 4.dp),
-                painter = painterResource(id = R.drawable.up_arrow),
-                contentDescription = "image description",
-            )
-        }
+        AppButton(
+            style = ButtonStyle.Link,
+            text = stringResource(CoreR.string.hide_order_details),
+            onClick = onDetailsClicked,
+            trailingIcon = IconWrapper.Vector(Icons.Outlined.KeyboardArrowUp),
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
@@ -341,7 +328,7 @@ private fun CollapsedSummary(
         ) {
 
             Text(
-                text = stringResource(R.string.items_for, items.size),
+                text = stringResource(CoreR.string.items_for, items.size),
                 style = N_16_24,
                 color = Color(0xFF333333),
             )
@@ -360,27 +347,13 @@ private fun CollapsedSummary(
             thickness = 1.dp
         )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp)
-                .clickable { onDetailsClicked.invoke() },
-            horizontalArrangement = Arrangement.aligned(Alignment.CenterHorizontally),
-        ) {
-
-            Text(
-                text = stringResource(R.string.view_order_details),
-                style = N_14,
-                color = Color(0xFFDD083A),
-                textDecoration = TextDecoration.Underline,
-            )
-
-            Image(
-                modifier = Modifier.padding(start = 4.dp),
-                painter = painterResource(id = R.drawable.down_arrow),
-                contentDescription = "image description",
-            )
-        }
+        AppButton(
+            style = ButtonStyle.Link,
+            text = stringResource(CoreR.string.view_order_details),
+            onClick = onDetailsClicked,
+            trailingIcon = IconWrapper.Vector(Icons.Outlined.KeyboardArrowDown),
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
@@ -469,8 +442,8 @@ fun EnterDetailsBlock(
             trailingIcon = {
                 if (isSeatNumberValid) {
                     Image(
-                        painterResource(R.drawable.completed),
-                        contentDescription = "Completed",
+                        painterResource(CoreR.drawable.ic_order_success),
+                        contentDescription = stringResource(CoreR.string.completed),
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -505,7 +478,7 @@ fun ForcePromotionBlock(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Enter promotion ID for force usage",
+            text = stringResource(R.string.enter_promotion_id_for_force_usage),
             style = B_18_26,
             color = Color(0xFF333333),
         )
@@ -518,7 +491,7 @@ fun ForcePromotionBlock(
             onValueChange = { onPromotionEntered.invoke(it) },
             label = {
                 Text(
-                    text = "Promotion ID",
+                    text = stringResource(R.string.promotion_id),
                     style = N_14_22,
                     color = Color(0xFF666666),
                 )
@@ -540,15 +513,14 @@ fun ForcePromotionBlock(
             )
         )
 
-        InseatButton(
-            text = "Apply promo",
+        AppButton(
+            text = stringResource(R.string.apply_promo),
             onClick = { onApplyPromotionClicked.invoke(promotionId) },
             isEnabled = promotionId.isNotEmpty(),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         )
-
     }
 }
 

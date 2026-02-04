@@ -1,21 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="order_result_dialog_title_success">Your order\'s in!</string>
-    <string name="order_result_dialog_title_failure">Something went wrong</string>
-    <string name="order_result_dialog_message_success">Sit back and relax! A crew member will bring your order to you.</string>
-    <string name="order_result_dialog_message_failure">We couldn\'t process your order. Please try again in some minutes.</string>
-    <string name="order_result_dialog_keep_shopping_button">Keep shopping</string>
-    <string name="order_result_dialog_view_order_status_button">View order status</string>
-    <string name="order_result_dialog_try_again_button">I understand</string>
-    <string name="order_now">Order now</string>
-    <string name="limit_reached">Limit reached</string>
-    <string name="total">Total</string>
-    <string name="subtotal">Subtotal</string>
-    <string name="summary">Summary</string>
-    <string name="items_for">%1$s items for</string>
-    <string name="view_order_details">View order details</string>
-    <string name="enter_your_details">Enter your details</string>
-    <string name="what_s_your_seat_number">What’s your seat number?</string>
-    <string name="you_ll_pay_your_order_to_a_crew_member_when_they_deliver_it_to_you">You’ll pay your order to a crew member when they deliver it to you.</string>
-    <string name="hide_order_details">Hide order details</string>
+    <string name="basket_screen_title">Shopping cart</string>
+    <string name="basket_plus_icon_content_description">Plus icon</string>
+    <string name="basket_add_more">Add more</string>
+    <string name="basket_checkout">Checkout</string>
 </resources>

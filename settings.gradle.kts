@@ -50,6 +50,7 @@ include(":core:ui")
 include(":core:preferences:api")
 include(":core:preferences:impl")
 include(":core:extension")
+include(":core:resources")
 
 include(":basket")
 include(":basket_api")

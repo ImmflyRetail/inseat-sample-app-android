@@ -1,7 +1,6 @@
 package com.immflyretail.inseat.sampleapp.orders.presentation.status
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,11 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -37,6 +33,8 @@ import androidx.navigation.compose.composable
 import com.immflyretail.inseat.sampleapp.core.extension.execute
 import com.immflyretail.inseat.sampleapp.orders.R
 import com.immflyretail.inseat.sampleapp.orders_api.OrdersScreenContract
+import com.immflyretail.inseat.sampleapp.ui.AppButton
+import com.immflyretail.inseat.sampleapp.ui.ButtonStyle
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14_22
@@ -49,7 +47,7 @@ import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14_22
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16_24
 import com.immflyretail.inseat.sampleapp.ui.Loading
-import com.immflyretail.inseat.sampleapp.ui.Screen
+import com.immflyretail.inseat.sampleapp.ui.AppScaffold
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
 import com.immflyretail.inseat.sdk.api.models.AppliedPromotion
 import com.immflyretail.inseat.sdk.api.models.Order
@@ -58,6 +56,7 @@ import com.immflyretail.inseat.sdk.api.models.OrderStatusEnum
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.Locale
+import com.immflyretail.inseat.sampleapp.core.resources.R as CoreR
 
 private val dateFormat = SimpleDateFormat("dd/MM/yy, HH:mm", Locale.getDefault())
 
@@ -77,7 +76,7 @@ fun OrderStatusScreen(
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
-    Screen(
+    AppScaffold(
         modifier = modifier,
         title = stringResource(R.string.order_status_title),
         onBackClicked = { viewModel.obtainEvent(OrderStatusScreenEvent.OnBackClicked) },
@@ -114,10 +113,7 @@ private fun ContentScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         OrderStatus(uiState.order.status)
-        OrderDetails(
-            order = uiState.order,
-            onDetailsClicked = { }
-        )
+        OrderDetails(order = uiState.order,)
         if (uiState.order.status == OrderStatusEnum.PLACED || uiState.order.status == OrderStatusEnum.RECEIVED) {
             OrderCancellation(onCancelOrderClicked = { eventReceiver(OrderStatusScreenEvent.OnCancelOrderClicked) })
         }
@@ -196,7 +192,6 @@ fun OrderStatusItem(name: String, isActive: Boolean, modifier: Modifier = Modifi
 private fun OrderDetails(
     order: Order,
     modifier: Modifier = Modifier,
-    onDetailsClicked: () -> Unit
 ) {
     Column(
         modifier = modifier
@@ -280,7 +275,8 @@ private fun OrderDetails(
         )
 
         val savings = order.appliedPromotions.sumOf {
-            (it.benefitType as? AppliedPromotion.BenefitType.Discount)?.totalSavings?.amount ?: BigDecimal.ZERO
+            (it.benefitType as? AppliedPromotion.BenefitType.Discount)?.totalSavings?.amount
+                ?: BigDecimal.ZERO
         }
         val total = order.totalPrice - savings
 
@@ -288,12 +284,11 @@ private fun OrderDetails(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp)
-                    .clickable { onDetailsClicked.invoke() },
+                    .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = stringResource(R.string.subtotal),
+                    text = stringResource(CoreR.string.subtotal),
                     style = B_14,
                     color = Color(0xFF333333),
                 )
@@ -309,12 +304,11 @@ private fun OrderDetails(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp)
-                    .clickable { onDetailsClicked.invoke() },
+                    .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = stringResource(R.string.savings),
+                    text = stringResource(CoreR.string.savings),
                     style = B_14,
                     color = Color(0xFF333333),
                 )
@@ -329,13 +323,11 @@ private fun OrderDetails(
         }
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onDetailsClicked.invoke() },
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = stringResource(R.string.total),
+                text = stringResource(CoreR.string.total),
                 style = B_18,
                 color = Color(0xFF333333),
             )
@@ -407,15 +399,13 @@ fun OrderCancellation(modifier: Modifier = Modifier, onCancelOrderClicked: () ->
             style = N_16_24
         )
 
-        Text(
-            modifier = Modifier
-                .padding(top = 10.dp)
-                .fillMaxWidth()
-                .clickable { onCancelOrderClicked.invoke() },
+        AppButton(
+            style = ButtonStyle.Flat,
             text = stringResource(R.string.order_status_cancel_order),
-            style = B_14,
-            color = Color(0xFFDD083A),
-            textAlign = TextAlign.Center,
+            onClick = onCancelOrderClicked,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp),
         )
     }
 }

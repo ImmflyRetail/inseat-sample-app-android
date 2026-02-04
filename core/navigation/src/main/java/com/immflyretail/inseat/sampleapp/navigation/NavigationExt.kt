@@ -1,5 +1,8 @@
 package com.immflyretail.inseat.sampleapp.navigation
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.os.Bundle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -41,4 +44,24 @@ inline fun <reified T : Any> serializableType(
     override fun put(bundle: Bundle, key: String, value: T) {
         bundle.putString(key, json.encodeToString(value))
     }
+}
+
+/**
+ * Attempts to pop the back stack. If empty (probably root screen),
+ * it finds and finishes the Activity to exit the app.
+ */
+fun NavController.popBackStackOrFinish() {
+    if (!popBackStack()) {
+        context.findActivity()?.finish()
+    }
+}
+
+/**
+ * Recursively unwraps the [Context] to find the underlying [Activity].
+ * Essential for Hilt or ThemeWrappers where the context is not a direct Activity instance.
+ */
+tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

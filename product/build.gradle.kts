@@ -22,6 +22,8 @@ dependencies {
     implementation(project(Modules.core_navigation))
     implementation(project(Modules.core_ui))
     implementation(project(Modules.core_extension))
+    implementation(project(Modules.core_resources))
+
     implementation(project(Modules.checkout_api))
 
     api(project(Modules.product_api))

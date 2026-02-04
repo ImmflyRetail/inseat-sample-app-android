@@ -3,7 +3,7 @@ package com.immflyretail.inseat.sampleapp
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import com.immflyretail.inseat.sampleapp.basket.presentation.basket.basketScreen
+import com.immflyretail.inseat.sampleapp.basket.presentation.basketScreen
 import com.immflyretail.inseat.sampleapp.checkout.presentation.checkoutScreen
 import com.immflyretail.inseat.sampleapp.orders.presentation.order.ordersScreen
 import com.immflyretail.inseat.sampleapp.orders.presentation.status.ordersStatusScreen

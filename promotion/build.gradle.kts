@@ -23,6 +23,7 @@ dependencies {
     implementation(project(Modules.core_ui))
     implementation(project(Modules.core_extension))
     implementation(project(Modules.core_preferences_api))
+    implementation(project(Modules.core_resources))
 
     api(project(Modules.promotion_api))
     implementation(project(Modules.basket_api))

@@ -6,7 +6,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +27,14 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Remove
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -68,8 +75,10 @@ import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopItem
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopStatus
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.TabItem
 import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
+import com.immflyretail.inseat.sampleapp.ui.AppButton
+import com.immflyretail.inseat.sampleapp.ui.AppIconButton
+import com.immflyretail.inseat.sampleapp.ui.ButtonStyle
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
-import com.immflyretail.inseat.sampleapp.ui.InseatButton
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14_22
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_16
@@ -85,13 +94,15 @@ import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16_24
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_18_26
 import com.immflyretail.inseat.sampleapp.ui.Loading
-import com.immflyretail.inseat.sampleapp.ui.Screen
+import com.immflyretail.inseat.sampleapp.ui.AppScaffold
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
+import com.immflyretail.inseat.sampleapp.ui.utils.IconWrapper
 import com.immflyretail.inseat.sdk.api.models.Menu
 import com.immflyretail.inseat.sdk.api.models.Promotion
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.immflyretail.inseat.sampleapp.ui.R as uiR
+import kotlin.math.roundToInt
+import com.immflyretail.inseat.sampleapp.core.resources.R as CoreR
 
 private val statusRawHeight = 44.dp
 private const val currency = "EUR"
@@ -116,36 +127,31 @@ fun ShopScreen(
     val searchFieldFocusRequester = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
 
-    Screen(
+    AppScaffold(
         modifier = Modifier.background(color = MaterialTheme.colorScheme.background),
         title = stringResource(R.string.shop),
         isBackButtonEnabled = isNeedToShowSearchBar,
-        customToolbar = if (isNeedToShowSearchBar) {
+        topBarSearch = if (isNeedToShowSearchBar) {
             {
-                SearchToolbar(
+                SearchTopBar(
                     query = (uiState as ShopScreenState.DataLoaded).searchQuery,
                     eventReceiver = viewModel::obtainEvent,
                     searchFieldFocusRequester = searchFieldFocusRequester,
-                    modifier = Modifier
-                        .padding(start = 40.dp, end = 16.dp)
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
                 )
             }
         } else null,
-        toolbarItem = {
+        topBarActions = {
             when {
                 uiState is ShopScreenState.DataLoaded -> {
-                    ShopToolbar(uiState, eventReceiver = viewModel::obtainEvent)
+                    ShopActions(uiState, eventReceiver = viewModel::obtainEvent)
                 }
 
                 uiState is ShopScreenState.SelectMenu -> {
-                    Image(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable { viewModel.obtainEvent(ShopScreenEvent.OnSettingsClicked) }
-                            .focusable(),
-                        painter = painterResource(id = uiR.drawable.settings),
-                        contentDescription = "Settings Icon"
+                    AppIconButton(
+                        icon = IconWrapper.Vector(Icons.Default.Settings),
+                        onClick = { viewModel.obtainEvent(ShopScreenEvent.OnSettingsClicked) },
+                        contentDescriptionId = R.string.shop_settings_icon_content_description
                     )
                 }
             }
@@ -158,7 +164,10 @@ fun ShopScreen(
                 ContentScreen(uiState, viewModel::obtainEvent)
             }
 
-            is ShopScreenState.Error -> ErrorScreen(uiState.message ?: "Error")
+            is ShopScreenState.Error -> ErrorScreen(
+                uiState.message ?: stringResource(id = R.string.shop_error_message)
+            )
+
             is ShopScreenState.SelectMenu -> MenuSelector(
                 menus = uiState.menus,
                 onMenuSelected = { menuType ->
@@ -184,25 +193,19 @@ fun ShopScreen(
 }
 
 @Composable
-private fun ShopToolbar(
+private fun ShopActions(
     uiState: ShopScreenState.DataLoaded,
     eventReceiver: (ShopScreenEvent) -> Unit
 ) {
-    Row(Modifier.padding(end = 16.dp)) {
-        if (uiState.tabs[uiState.selectedTabIndex] !is TabItem.PromotionTab) {
-            Image(
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable { eventReceiver(ShopScreenEvent.OnSearchClicked) }
-                    .focusable(),
-                painter = painterResource(id = R.drawable.ic_search),
-                contentDescription = "Search Icon"
-            )
-        }
+    if (uiState.tabs[uiState.selectedTabIndex] !is TabItem.PromotionTab && !uiState.isSearchEnabled) {
+        AppIconButton(
+            icon = IconWrapper.Vector(Icons.Outlined.Search),
+            onClick = { eventReceiver(ShopScreenEvent.OnSearchClicked) },
+            contentDescriptionId = R.string.shop_search_icon_content_description
+        )
 
         if (uiState.shopStatus == ShopStatus.ORDER) {
             BasketIcon(
-                modifier = Modifier.padding(start = 16.dp),
                 itemsInBasket = uiState.itemsInBasket,
                 eventReceiver = eventReceiver
             )
@@ -216,23 +219,18 @@ private fun BasketIcon(
     eventReceiver: (ShopScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier.size(24.dp)
-    ) {
-        Image(
-            modifier = Modifier
-                .size(24.dp)
-                .clickable { eventReceiver(ShopScreenEvent.OnCartClicked) }
-                .focusable(),
-            painter = painterResource(id = R.drawable.ic_basket),
-            contentDescription = "Shopping Basket Icon"
+    Box(modifier = modifier) {
+        AppIconButton(
+            icon = IconWrapper.Vector(Icons.Outlined.ShoppingCart),
+            onClick = { eventReceiver(ShopScreenEvent.OnCartClicked) },
+            contentDescriptionId = R.string.shop_basket_icon_content_description
         )
         if (itemsInBasket > 0) {
             Box(
                 modifier = Modifier
                     .size(14.dp)
                     .background(Color(0xFFD40E14), shape = CircleShape)
-                    .align(Alignment.BottomEnd),
+                    .align(Alignment.BottomCenter),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -252,32 +250,21 @@ fun OrdersInfo(
     eventReceiver: (ShopScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier
-            .background(MaterialTheme.colorScheme.primaryContainer)
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 12.dp)
+    Box(
+        modifier = Modifier
             .fillMaxWidth()
-            .height(40.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFF8F8F8))
-            .clickable { eventReceiver(ShopScreenEvent.OnOrdersClicked) },
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
     ) {
-        Text(
-            modifier = modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+        AppButton(
+            style = ButtonStyle.Flat,
             text = stringResource(R.string.shop_screen_my_orders_count, ordersCount),
-            style = N_14,
-            color = Color(0xFFDD083A)
-        )
-
-        Image(
-            painterResource(R.drawable.ic_arrow_right_red),
-            contentDescription = "Arrow",
-            modifier = Modifier
-                .padding(start = 8.dp)
-                .size(16.dp)
+            onClick = { eventReceiver(ShopScreenEvent.OnOrdersClicked) },
+            trailingIcon = IconWrapper.Vector(Icons.Outlined.ChevronRight),
+            modifier = modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFFF8F8F8)),
         )
     }
 }
@@ -485,7 +472,7 @@ private fun PromotionsList(
 ) {
     LazyColumn(
         contentPadding = PaddingValues(top = 24.dp, start = 16.dp, end = 16.dp, bottom = 54.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
@@ -522,7 +509,7 @@ fun ItemNotFound(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun SearchToolbar(
+fun SearchTopBar(
     query: String,
     eventReceiver: (ShopScreenEvent) -> Unit,
     searchFieldFocusRequester: FocusRequester,
@@ -530,19 +517,22 @@ fun SearchToolbar(
 ) {
     Row(modifier = modifier.fillMaxHeight(), verticalAlignment = Alignment.CenterVertically) {
         TextField(
-            modifier = Modifier.focusRequester(searchFieldFocusRequester),
+            modifier = Modifier
+                .focusRequester(searchFieldFocusRequester)
+                .fillMaxWidth()
+                .padding(end = 8.dp),
             textStyle = N_14,
             leadingIcon = {
                 Icon(
-                    painterResource(R.drawable.ic_search),
-                    contentDescription = "Search Icon"
+                    Icons.Outlined.Search,
+                    contentDescription = stringResource(id = R.string.shop_search_icon_content_description)
                 )
             },
             trailingIcon = {
                 if (query.isNotEmpty()) {
                     Icon(
-                        painterResource(R.drawable.ic_close),
-                        contentDescription = "Clear Search",
+                        Icons.Outlined.Close,
+                        contentDescription = stringResource(id = R.string.shop_clear_search_content_description),
                         modifier = Modifier.clickable { eventReceiver(ShopScreenEvent.OnSearch("")) }
                     )
                 }
@@ -578,14 +568,15 @@ private fun ListItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(228.dp)
-            .background(MaterialTheme.colorScheme.background)
-            .clickable { eventReceiver(ShopScreenEvent.OnProductClicked(item.product.itemId)) },
+            .clip(RoundedCornerShape(16.dp))
+            .clickable { eventReceiver(ShopScreenEvent.OnProductClicked(item.product.itemId)) }
+            .background(MaterialTheme.colorScheme.background, shape = RoundedCornerShape(8.dp)),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
+                .background(MaterialTheme.colorScheme.background)
+                .padding(bottom = 8.dp),
             horizontalAlignment = Alignment.Start,
         ) {
 
@@ -593,7 +584,6 @@ private fun ListItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(150.dp)
-                    .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.BottomEnd
             ) {
@@ -607,9 +597,9 @@ private fun ListItem(
                     painter = if (bitmap != null) {
                         BitmapPainter(image = bitmap.asImageBitmap())
                     } else {
-                        painterResource(R.drawable.placeholder_image)
+                        painterResource(CoreR.drawable.im_food_placeholder)
                     },
-                    contentDescription = "Image"
+                    contentDescription = stringResource(id = CoreR.string.not_selected_content_description)
                 )
 
                 if (shopStatus == ShopStatus.ORDER) {
@@ -635,7 +625,8 @@ private fun ListItem(
                 color = textColor,
             )
 
-            val priceData = item.product.prices.find { it.currency == currency } ?: item.product.prices.first()
+            val priceData =
+                item.product.prices.find { it.currency == currency } ?: item.product.prices.first()
             val textStyle = N_12_20.copy(color = textColor)
 
             Text(
@@ -649,7 +640,7 @@ private fun ListItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 5.dp),
-                text = stringResource(R.string.stock) + item.product.quantity.toString(),
+                text = stringResource(id = R.string.shop_stock_label, item.product.quantity),
                 style = textStyle
             )
         }
@@ -666,7 +657,7 @@ private fun PromotionItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(120.dp)
+            .clip(RoundedCornerShape(16.dp))
             .clickable { eventReceiver(ShopScreenEvent.OnPromotionClicked(item.promotionId)) },
     ) {
         Box(modifier = modifier.fillMaxSize()) {
@@ -699,6 +690,7 @@ private fun PromotionItem(
                         modifier = Modifier.fillMaxWidth(),
                         text = item.discountText,
                         style = N_14_22,
+                        minLines = 2,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         color = Color(0xFF666666)
@@ -708,17 +700,30 @@ private fun PromotionItem(
                     var textColor = Color(0xFF109C42)
                     val savings = when (item.benefitType) {
                         Promotion.BenefitType.DISCOUNT -> when (item.discountType) {
-                            Promotion.DiscountType.PERCENTAGE -> discount?.discount.toString() + "% OFF"
-                            Promotion.DiscountType.AMOUNT -> discount?.discount.toString() + "$currency OFF"
+                            Promotion.DiscountType.PERCENTAGE -> stringResource(
+                                id = R.string.shop_promotion_discount_percentage_off,
+                                item.discountPercent.roundToInt()
+                            )
+
+                            Promotion.DiscountType.AMOUNT -> stringResource(
+                                id = R.string.shop_promotion_discount_amount_off,
+                                discount?.discount.toString(),
+                                currency
+                            )
+
                             Promotion.DiscountType.FIXED_PRICE -> {
                                 textColor = Color(0xFF333333)
-                                discount?.discount.toString() + currency
+                                stringResource(
+                                    id = R.string.shop_promotion_fixed_price,
+                                    discount?.discount.toString(),
+                                    currency
+                                )
                             }
 
-                            Promotion.DiscountType.COUPON -> "Get a voucher"
+                            Promotion.DiscountType.COUPON -> stringResource(id = R.string.shop_get_a_voucher)
                         }
 
-                        Promotion.BenefitType.COUPON -> "Get a voucher"
+                        Promotion.BenefitType.COUPON -> stringResource(id = R.string.shop_get_a_voucher)
                     }
                     Text(
                         modifier = Modifier.fillMaxWidth(),
@@ -729,8 +734,12 @@ private fun PromotionItem(
                 }
                 val bitmap = try {
                     val decodedBytes =
-                        Base64.decode(item.base64image?.encodeToByteArray() ?: byteArrayOf(), Base64.DEFAULT)
-                    BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size).asImageBitmap()
+                        Base64.decode(
+                            item.base64image?.encodeToByteArray() ?: byteArrayOf(),
+                            Base64.DEFAULT
+                        )
+                    BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                        .asImageBitmap()
                 } catch (e: Exception) {
                     null
                 }
@@ -741,31 +750,30 @@ private fun PromotionItem(
                             .width(106.dp)
                             .height(90.dp),
                         bitmap = bitmap,
-                        contentDescription = "Product image"
+                        contentDescription = stringResource(id = R.string.shop_promotion_item_image_content_description)
                     )
                 } else {
                     Image(
                         modifier = Modifier
                             .width(106.dp)
                             .height(90.dp),
-                        painter = painterResource(R.drawable.placeholder_image),
-                        contentDescription = "Product image"
+                        painter = painterResource(CoreR.drawable.im_food_placeholder),
+                        contentDescription = stringResource(id = R.string.shop_promotion_item_image_content_description)
                     )
                 }
             }
+
             Box(
                 modifier = modifier
                     .padding(8.dp)
-                    .size(24.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFE2E2E2))
+                    .size(32.dp)
+                    .background(Color(0xFFE2E2E2), shape = CircleShape)
                     .align(Alignment.BottomEnd),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    modifier = Modifier.size(12.dp),
-                    painter = painterResource(id = R.drawable.ic_plus),
-                    contentDescription = "Not selected",
+                Icon(
+                    imageVector = Icons.Outlined.Add,
+                    contentDescription = stringResource(id = CoreR.string.not_selected_content_description),
                 )
             }
         }
@@ -815,9 +823,9 @@ fun StatusRow(shopStatus: ShopStatus, modifier: Modifier = Modifier) {
     }
 
     val statusText = when (shopStatus) {
-        ShopStatus.OPEN -> "Open to browse"
-        ShopStatus.CLOSED -> "Closed"
-        ShopStatus.DEFAULT -> "Offline"
+        ShopStatus.OPEN -> stringResource(id = R.string.shop_status_open_to_browse)
+        ShopStatus.CLOSED -> stringResource(id = R.string.shop_status_closed)
+        ShopStatus.DEFAULT -> stringResource(id = R.string.shop_status_offline)
         else -> ""
     }
 
@@ -831,7 +839,7 @@ fun StatusRow(shopStatus: ShopStatus, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
-        Text("Shop Status: ", color = rowTextColor)
+        Text(stringResource(id = R.string.shop_status_label) + " ", color = rowTextColor)
         Text(text = statusText, color = rowTextColor, fontWeight = FontWeight.Bold)
     }
 }
@@ -845,7 +853,6 @@ fun OutOfStockIcon(modifier: Modifier = Modifier) {
     ) {
         Box(
             modifier = Modifier
-                .height(14.dp)
                 .wrapContentWidth()
                 .clip(RoundedCornerShape(14.dp))
                 .background(Color(0xFFF8F8F8)),
@@ -853,7 +860,7 @@ fun OutOfStockIcon(modifier: Modifier = Modifier) {
         ) {
             Text(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                text = stringResource(R.string.out_of_stock),
+                text = stringResource(CoreR.string.out_of_stock),
                 style = N_10,
                 color = Color(0xFFD40E14),
                 textAlign = TextAlign.Center,
@@ -862,15 +869,15 @@ fun OutOfStockIcon(modifier: Modifier = Modifier) {
         Box(
             modifier = Modifier
                 .padding(start = 16.dp)
-                .size(24.dp)
+                .size(32.dp)
                 .clip(CircleShape)
                 .background(Color(0xFFF8F8F8)),
             contentAlignment = Alignment.Center
         ) {
-            Image(
-                modifier = Modifier.size(12.dp),
-                painter = painterResource(id = R.drawable.ic_plus_dissabled),
-                contentDescription = "Not selected"
+            Icon(
+                imageVector = Icons.Outlined.Add,
+                tint = Color(0xB3575555),
+                contentDescription = stringResource(id = CoreR.string.not_selected_content_description)
             )
         }
     }
@@ -882,20 +889,13 @@ fun NotSelectedIcon(
     eventReceiver: (ShopScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .size(24.dp)
-            .clip(CircleShape)
-            .background(Color(0xFFE2E2E2))
-            .clickable { eventReceiver(ShopScreenEvent.OnAddItemClicked(itemId)) },
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            modifier = Modifier.size(12.dp),
-            painter = painterResource(id = R.drawable.ic_plus),
-            contentDescription = "Not selected",
-        )
-    }
+    AppIconButton(
+        icon = IconWrapper.Vector(Icons.Outlined.Add),
+        onClick = { eventReceiver(ShopScreenEvent.OnAddItemClicked(itemId)) },
+        contentDescriptionId = CoreR.string.add_item_content_description,
+        containerColor = Color(0xFFE2E2E2),
+        modifier = modifier.size(32.dp)
+    )
 }
 
 @Composable
@@ -907,35 +907,31 @@ fun SelectedIcon(
 ) {
     Row(
         modifier = modifier
-            .height(24.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(32.dp))
             .background(Color(0xFFE2E2E2)),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Image(
-            modifier = Modifier
-                .padding(start = 6.dp)
-                .width(13.dp)
-                .height(14.dp)
-                .clickable { eventReceiver(ShopScreenEvent.OnRemoveItemClicked(itemId)) },
-            painter = painterResource(id = R.drawable.ic_remove),
-            contentDescription = "Not selected"
+        AppIconButton(
+            icon = IconWrapper.Vector(Icons.Outlined.Remove),
+            onClick = { eventReceiver(ShopScreenEvent.OnRemoveItemClicked(itemId)) },
+            contentDescriptionId = CoreR.string.remove_item_content_description,
+            modifier = Modifier.size(32.dp)
         )
+
         Text(
             text = selectedQuantity.toString(),
             style = B_14,
             color = Color(0xFF333333),
             textAlign = TextAlign.Center,
         )
-        Image(
-            modifier = Modifier
-                .padding(end = 6.dp)
-                .size(12.dp)
-                .clickable { eventReceiver(ShopScreenEvent.OnAddItemClicked(itemId)) },
-            painter = painterResource(id = R.drawable.ic_plus),
-            contentDescription = "Not selected"
+
+        AppIconButton(
+            icon = IconWrapper.Vector(Icons.Outlined.Add),
+            onClick = { eventReceiver(ShopScreenEvent.OnAddItemClicked(itemId)) },
+            contentDescriptionId = CoreR.string.add_item_content_description,
+            modifier = Modifier.size(32.dp)
         )
     }
 }
@@ -953,15 +949,14 @@ fun LimitReachedIcon(
     ) {
         Box(
             modifier = Modifier
-                .height(14.dp)
                 .wrapContentWidth()
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(16.dp))
                 .background(Color(0xFFF8F8F8)),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                text = stringResource(R.string.limit_reached),
+                text = stringResource(CoreR.string.limit_reached),
                 style = N_10,
                 color = Color(0xFFD40E14),
                 textAlign = TextAlign.Center,
@@ -971,21 +966,17 @@ fun LimitReachedIcon(
         Row(
             modifier = Modifier
                 .padding(top = 8.dp)
-                .height(24.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(32.dp))
                 .background(Color(0xFFE2E2E2)),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Image(
-                modifier = Modifier
-                    .padding(start = 6.dp)
-                    .width(13.dp)
-                    .height(14.dp)
-                    .clickable { eventReceiver(ShopScreenEvent.OnRemoveItemClicked(itemId)) },
-                painter = painterResource(id = R.drawable.ic_remove),
-                contentDescription = "Not selected"
+            AppIconButton(
+                icon = IconWrapper.Vector(Icons.Outlined.Remove),
+                onClick = { eventReceiver(ShopScreenEvent.OnRemoveItemClicked(itemId)) },
+                contentDescriptionId = CoreR.string.remove_item_content_description,
+                modifier = Modifier.size(32.dp)
             )
             Text(
                 text = selectedQuantity.toString(),
@@ -993,12 +984,12 @@ fun LimitReachedIcon(
                 color = Color(0xFF333333),
                 textAlign = TextAlign.Center,
             )
-            Image(
-                modifier = Modifier
-                    .padding(end = 6.dp)
-                    .size(12.dp),
-                painter = painterResource(id = R.drawable.ic_plus_dissabled),
-                contentDescription = "Not selected"
+            AppIconButton(
+                icon = IconWrapper.Vector(Icons.Outlined.Add),
+                onClick = { },
+                isEnabled = false,
+                contentDescriptionId = CoreR.string.not_selected_content_description,
+                modifier = Modifier.size(32.dp)
             )
         }
     }
@@ -1036,9 +1027,10 @@ fun MenuSelector(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             items(items = menus, itemContent = { menu ->
-                InseatButton(
+                AppButton(
                     text = menu.displayName.first().text,
-                    onClick = { onMenuSelected.invoke(menu) }
+                    onClick = { onMenuSelected.invoke(menu) },
+                    modifier = Modifier.fillMaxWidth(),
                 )
             })
         }
@@ -1065,19 +1057,10 @@ fun InfoBlock(modifier: Modifier = Modifier) {
 
 @Composable
 fun CartButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
-    InseatButton(
-        modifier = modifier,
+    AppButton(
         text = stringResource(R.string.shop_cart_button),
-        icon = {
-            Image(
-                modifier = Modifier
-                    .size(24.dp)
-                    .padding(end = 8.dp),
-                painter = painterResource(id = R.drawable.ic_cart_for_button),
-                contentDescription = "Cart Icon"
-            )
-        },
-        onClick = onClick
+        onClick = onClick,
+        leadingIcon = IconWrapper.Vector(Icons.Outlined.ShoppingCart),
+        modifier = modifier.fillMaxWidth(),
     )
-
 }

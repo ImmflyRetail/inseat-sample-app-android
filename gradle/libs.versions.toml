@@ -52,6 +52,7 @@ androidx-compose-ui-util = { group = "androidx.compose.ui", name = "ui-util" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-compose-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata" }
+androidx-compose-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 
 # Compose with versions
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "androidxComposeMaterial3" }
@@ -89,5 +90,6 @@ compose = [
     "androidx-activity-compose",
     "androidx-compose-livedata",
     "androidx-lifecycle-runtimeCompose",
-    "androidx-compose-ui-tooling-preview"
+    "androidx-compose-ui-tooling-preview",
+    "androidx-compose-icons-extended"
 ]

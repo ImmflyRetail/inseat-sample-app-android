@@ -23,10 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -38,7 +35,7 @@ import com.immflyretail.inseat.sampleapp.settings_api.SettingsScreenContract
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_12
 import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16_24
 import com.immflyretail.inseat.sampleapp.ui.Loading
-import com.immflyretail.inseat.sampleapp.ui.Screen
+import com.immflyretail.inseat.sampleapp.ui.AppScaffold
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
 
 fun NavGraphBuilder.settingsScreen(navController: NavController) {
@@ -57,7 +54,7 @@ private fun SettingsScreen(
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
-    Screen(
+    AppScaffold(
         modifier = modifier,
         title = stringResource(R.string.settings),
         onBackClicked = { viewModel.obtainEvent(SettingsScreenEvent.OnBackClicked) },

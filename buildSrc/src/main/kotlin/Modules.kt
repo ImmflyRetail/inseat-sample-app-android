@@ -8,6 +8,7 @@ object Modules {
     const val core_preferences_api = ":core:preferences:api"
     const val core_preferences_impl = ":core:preferences:impl"
     const val core_extension = ":core:extension"
+    const val core_resources = ":core:resources"
 
     // features
     const val basket = ":basket"
