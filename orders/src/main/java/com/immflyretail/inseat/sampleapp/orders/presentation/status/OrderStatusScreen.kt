@@ -1,5 +1,6 @@
 package com.immflyretail.inseat.sampleapp.orders.presentation.status
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,10 +19,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -33,22 +36,24 @@ import androidx.navigation.compose.composable
 import com.immflyretail.inseat.sampleapp.core.extension.execute
 import com.immflyretail.inseat.sampleapp.orders.R
 import com.immflyretail.inseat.sampleapp.orders_api.OrdersScreenContract
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_14
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_14_22
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_16_24
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_18
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_24_32
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_10
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_12
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_14
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_14_22
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_16_24
+import com.immflyretail.inseat.sampleapp.theme.green
 import com.immflyretail.inseat.sampleapp.ui.AppButton
+import com.immflyretail.inseat.sampleapp.ui.AppScaffold
 import com.immflyretail.inseat.sampleapp.ui.ButtonStyle
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14_22
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_16_24
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_18
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_24_32
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_10
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_12
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14_22
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16_24
 import com.immflyretail.inseat.sampleapp.ui.Loading
-import com.immflyretail.inseat.sampleapp.ui.AppScaffold
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
+import com.immflyretail.inseat.sampleapp.ui.AppAnimatedBottomSheet
 import com.immflyretail.inseat.sdk.api.models.AppliedPromotion
 import com.immflyretail.inseat.sdk.api.models.Order
 import com.immflyretail.inseat.sdk.api.models.OrderItem
@@ -76,25 +81,49 @@ fun OrderStatusScreen(
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
+    var showBottomSheet by remember { mutableStateOf(false) }
+
     AppScaffold(
         modifier = modifier,
         title = stringResource(R.string.order_status_title),
         onBackClicked = { viewModel.obtainEvent(OrderStatusScreenEvent.OnBackClicked) },
     ) {
-        when (uiState) {
-            is OrderStatusScreenState.Data -> ContentScreen(
-                uiState = uiState,
-                eventReceiver = viewModel::obtainEvent,
-            )
 
-            is OrderStatusScreenState.Error -> ErrorScreen(uiState.message)
-            OrderStatusScreenState.Loading -> Loading()
+        Crossfade(
+            targetState = uiState,
+            label = "StateTransition"
+        ) { state ->
+            when (state) {
+                is OrderStatusScreenState.Data -> ContentScreen(
+                    uiState = state,
+                    eventReceiver = viewModel::obtainEvent,
+                )
+                is OrderStatusScreenState.Error -> ErrorScreen(state.message)
+                OrderStatusScreenState.Loading -> Loading()
+            }
         }
+
+        AppAnimatedBottomSheet(
+            isVisible = showBottomSheet,
+            onDismissClicked = { showBottomSheet = false },
+            title = stringResource(CoreR.string.cancel_order_title),
+            description = stringResource(CoreR.string.cancel_order_description),
+            primaryButtonText = stringResource(CoreR.string.cancel_order),
+            onPrimaryButtonClick = {
+                showBottomSheet = false
+                viewModel.obtainEvent(OrderStatusScreenEvent.OnConfirmOrderCancellationClicked)
+            },
+            secondaryButtonText = stringResource(CoreR.string.keep_order),
+            onSecondaryButtonClick = { showBottomSheet = false },
+        )
     }
 
     SingleEventEffect(viewModel.uiAction) { action ->
         when (action) {
-            is OrderStatusScreenAction.Navigate -> navController.execute(action.lambda)
+            is OrderStatusScreenActions.Navigate -> navController.execute(action.lambda)
+            OrderStatusScreenActions.ShowBottomSheet -> {
+                showBottomSheet = true
+            }
         }
     }
 }
@@ -113,7 +142,7 @@ private fun ContentScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         OrderStatus(uiState.order.status)
-        OrderDetails(order = uiState.order,)
+        OrderDetails(order = uiState.order)
         if (uiState.order.status == OrderStatusEnum.PLACED || uiState.order.status == OrderStatusEnum.RECEIVED) {
             OrderCancellation(onCancelOrderClicked = { eventReceiver(OrderStatusScreenEvent.OnCancelOrderClicked) })
         }
@@ -175,9 +204,9 @@ fun OrderStatusItem(name: String, isActive: Boolean, modifier: Modifier = Modifi
         LinearProgressIndicator(
             progress = { 1f },
             color = if (isActive) {
-                Color(0xFFDD083A)
+                MaterialTheme.colorScheme.primary
             } else {
-                Color(0xFFF2F2F2)
+                MaterialTheme.colorScheme.outlineVariant
             }
         )
         Text(
@@ -216,7 +245,7 @@ private fun OrderDetails(
                     .weight(1f),
                 text = dateFormat.format(order.createdAt),
                 style = N_12,
-                color = Color(0xFF666666),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -224,40 +253,40 @@ private fun OrderDetails(
             modifier = Modifier.padding(top = 24.dp),
             text = stringResource(R.string.details),
             style = B_16_24,
-            color = Color(0xFF333333),
+            color = MaterialTheme.colorScheme.onBackground,
         )
 
         Text(
             modifier = Modifier.padding(top = 16.dp),
             text = stringResource(R.string.order_id),
             style = N_14,
-            color = Color(0xFF666666),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Text(
             modifier = Modifier.padding(top = 4.dp),
             text = order.id,
             style = B_14_22,
-            color = Color(0xFF333333),
+            color = MaterialTheme.colorScheme.onBackground,
         )
 
         Text(
             modifier = Modifier.padding(top = 16.dp),
             text = stringResource(R.string.seat_number),
             style = N_14,
-            color = Color(0xFF666666),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Text(
             modifier = Modifier.padding(top = 4.dp),
             text = order.customerSeatNumber,
             style = B_14_22,
-            color = Color(0xFF333333),
+            color = MaterialTheme.colorScheme.onBackground,
         )
 
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 16.dp),
-            color = Color(0xFFE2E2E2),
+            color = MaterialTheme.colorScheme.tertiaryContainer,
             thickness = 1.dp
         )
 
@@ -270,7 +299,7 @@ private fun OrderDetails(
 
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 16.dp),
-            color = Color(0xFFE2E2E2),
+            color = MaterialTheme.colorScheme.tertiaryContainer,
             thickness = 1.dp
         )
 
@@ -290,13 +319,13 @@ private fun OrderDetails(
                 Text(
                     text = stringResource(CoreR.string.subtotal),
                     style = B_14,
-                    color = Color(0xFF333333),
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
 
                 Text(
                     text = "${order.totalPrice} ${order.currency}",
                     style = B_14,
-                    color = Color(0xFF333333),
+                    color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Right,
                 )
             }
@@ -310,13 +339,13 @@ private fun OrderDetails(
                 Text(
                     text = stringResource(CoreR.string.savings),
                     style = B_14,
-                    color = Color(0xFF333333),
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
 
                 Text(
                     text = "-${savings} ${order.currency}",
                     style = B_14,
-                    color = Color(0xFF109C42),
+                    color = green,
                     textAlign = TextAlign.Right,
                 )
             }
@@ -329,13 +358,13 @@ private fun OrderDetails(
             Text(
                 text = stringResource(CoreR.string.total),
                 style = B_18,
-                color = Color(0xFF333333),
+                color = MaterialTheme.colorScheme.onBackground,
             )
 
             Text(
                 text = "${total} ${order.currency}",
                 style = B_18,
-                color = Color(0xFF333333),
+                color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Right,
             )
         }
@@ -357,7 +386,7 @@ private fun ProductItem(
         Text(
             text = "${item.quantity}x",
             style = B_14,
-            color = Color(0xFF333333),
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
 
@@ -368,7 +397,7 @@ private fun ProductItem(
                 .fillMaxWidth(),
             text = item.name,
             style = N_14_22,
-            color = Color(0xFF333333),
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Start,
         )
 
@@ -376,7 +405,7 @@ private fun ProductItem(
         Text(
             text = "$price $currency",
             style = B_14,
-            color = Color(0xFF333333),
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.End,
         )
     }
@@ -390,7 +419,7 @@ fun OrderCancellation(modifier: Modifier = Modifier, onCancelOrderClicked: () ->
             .fillMaxWidth()
             .wrapContentHeight()
             .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFFDF6E2))
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .padding(16.dp)
 
     ) {
@@ -401,11 +430,9 @@ fun OrderCancellation(modifier: Modifier = Modifier, onCancelOrderClicked: () ->
 
         AppButton(
             style = ButtonStyle.Flat,
-            text = stringResource(R.string.order_status_cancel_order),
+            text = stringResource(CoreR.string.cancel_order),
             onClick = onCancelOrderClicked,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp),
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }

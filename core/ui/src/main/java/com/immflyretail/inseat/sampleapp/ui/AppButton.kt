@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,8 +30,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_16
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_16
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_14
 import com.immflyretail.inseat.sampleapp.ui.utils.IconWrapper
 
 @Composable
@@ -69,7 +70,7 @@ fun AppButton(
             }
         }
         ButtonStyle.Outlined -> {
-            val contentColor = if (isEnabled) Color(0xFFDD083A) else Color(0xFFF19CB0)
+            val contentColor = if (isEnabled) MaterialTheme.colorScheme.primary else Color(0xFFF19CB0)
             OutlinedButton(
                 modifier = commonModifier,
                 onClick = onClick,
@@ -98,7 +99,7 @@ fun AppButton(
                 shape = RoundedCornerShape(8.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 colors = ButtonDefaults.textButtonColors(
-                    contentColor = Color(0xFFDD083A),
+                    contentColor = MaterialTheme.colorScheme.primary,
                     disabledContentColor = Color(0xFFF19CB0)
                 ),
             ) {
@@ -118,7 +119,7 @@ fun AppButton(
                 shape = RoundedCornerShape(8.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 colors = ButtonDefaults.textButtonColors(
-                    contentColor = Color(0xFFDD083A),
+                    contentColor = MaterialTheme.colorScheme.primary,
                     disabledContentColor = Color(0xFFF19CB0)
                 ),
             ) {

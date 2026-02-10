@@ -2,6 +2,5 @@
 <resources>
     <string name="confirm_button">Confirm</string>
     <string name="what_s_your_seat_number">What’s your seat number?</string>
-    <string name="shop_has_not_opened_yet">The store is not open yet! keep in mind that prices and stock may change when the store officially opens.</string>
     <string name="product_close_icon_content_description">Close Icon</string>
 </resources>

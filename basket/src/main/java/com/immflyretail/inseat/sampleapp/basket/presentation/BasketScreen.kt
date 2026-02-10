@@ -9,7 +9,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -36,12 +38,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,18 +54,21 @@ import com.immflyretail.inseat.sampleapp.basket.R
 import com.immflyretail.inseat.sampleapp.basket.presentation.model.BasketItem
 import com.immflyretail.inseat.sampleapp.basket_api.BasketScreenContract
 import com.immflyretail.inseat.sampleapp.core.extension.execute
+import com.immflyretail.inseat.sampleapp.core.extension.toLocalizedMoney
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_14
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_14_22
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_18_26
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_22_30
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_10
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_12_20
+import com.immflyretail.inseat.sampleapp.theme.green
+import com.immflyretail.inseat.sampleapp.theme.red
 import com.immflyretail.inseat.sampleapp.ui.AppButton
 import com.immflyretail.inseat.sampleapp.ui.AppIconButton
+import com.immflyretail.inseat.sampleapp.ui.AppScaffold
 import com.immflyretail.inseat.sampleapp.ui.ButtonStyle
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14_22
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_18_26
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_22_30
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_10
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_12_20
 import com.immflyretail.inseat.sampleapp.ui.Loading
-import com.immflyretail.inseat.sampleapp.ui.AppScaffold
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
 import com.immflyretail.inseat.sampleapp.ui.utils.IconWrapper
 import com.immflyretail.inseat.sdk.api.models.AppliedPromotion
@@ -119,64 +124,50 @@ private fun ContentScreen(
     viewModel: BasketScreenViewModel,
     modifier: Modifier = Modifier
 ) {
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        Column(
+        ProductSummary(modifier, uiState, viewModel)
+
+        FooterButtons(viewModel, uiState)
+    }
+}
+
+@Composable
+private fun ColumnScope.ProductSummary(
+    modifier: Modifier,
+    uiState: BasketScreenState.DataLoaded,
+    viewModel: BasketScreenViewModel
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(start = 16.dp, end = 16.dp)
+            .weight(1f),
+    ) {
+        Text(
+            modifier = Modifier.padding(top = 24.dp, bottom = 16.dp),
+            text = stringResource(CoreR.string.summary),
+            style = B_22_30,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        LazyColumn(
             modifier = modifier
-                .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 16.dp)
+                .background(MaterialTheme.colorScheme.background),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(bottom = 16.dp)
         ) {
-            Text(
-                modifier = Modifier.padding(top = 24.dp, bottom = 16.dp),
-                text = stringResource(CoreR.string.summary),
-                style = B_22_30,
-                color = Color(0xFF333333)
-            )
-
-            LazyColumn(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(items = uiState.items, itemContent = { item ->
-                    ListItem(item = item, eventReceiver = viewModel::obtainEvent)
-                })
-                item {
-                    SummaryBlock(uiState.subtotal, uiState.appliedPromotions)
-                }
+            items(items = uiState.items, itemContent = { item ->
+                ListItem(item = item, eventReceiver = viewModel::obtainEvent)
+            })
+            item {
+                SummaryBlock(uiState.subtotal, uiState.appliedPromotions)
             }
-        }
-
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .height(IntrinsicSize.Max)
-                .background(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-                ).padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            AppButton(
-                style = ButtonStyle.Flat,
-                text = stringResource(id = R.string.basket_add_more),
-                onClick = { viewModel.obtainEvent(BasketScreenEvent.OnAddMoreClicked) },
-                leadingIcon = IconWrapper.Vector(Icons.Outlined.Add),
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-            )
-
-            AppButton(
-                text = stringResource(id =  R.string.basket_checkout),
-                isEnabled = uiState.items.isNotEmpty(),
-                onClick = { viewModel.obtainEvent(BasketScreenEvent.OnCheckoutClicked) },
-                modifier = Modifier.weight(1f).fillMaxHeight(),
-            )
         }
     }
 }
@@ -243,7 +234,7 @@ private fun ListItem(
                             .wrapContentWidth(),
                         text = item.product.name,
                         style = B_14_22,
-                        color = Color(0xFF333333),
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
 
                     when {
@@ -270,7 +261,7 @@ private fun ListItem(
 
                     text = priceData.amount.toString() + " " + priceData.currency,
                     style = N_12_20,
-                    color = Color(0xFF333333),
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
             }
         }
@@ -288,7 +279,7 @@ fun NormalIcon(
         modifier = modifier
             .width(106.dp)
             .clip(RoundedCornerShape(24.dp))
-            .background(Color(0xFFE2E2E2)),
+            .background(MaterialTheme.colorScheme.tertiaryContainer),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -302,7 +293,7 @@ fun NormalIcon(
         Text(
             text = selectedQuantity.toString(),
             style = B_14,
-            color = Color(0xFF333333),
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
 
@@ -332,7 +323,7 @@ fun LimitReachedIcon(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFFE2E2E2)),
+                .background(MaterialTheme.colorScheme.tertiaryContainer),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -346,7 +337,7 @@ fun LimitReachedIcon(
             Text(
                 text = selectedQuantity.toString(),
                 style = B_14,
-                color = Color(0xFF333333),
+                color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
             )
 
@@ -365,14 +356,14 @@ fun LimitReachedIcon(
                 .height(14.dp)
                 .wrapContentWidth()
                 .clip(RoundedCornerShape(14.dp))
-                .background(Color(0xFFF8F8F8)),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                 text = stringResource(CoreR.string.limit_reached),
                 style = N_10,
-                color = Color(0xFFD40E14),
+                color = red,
                 textAlign = TextAlign.Center,
             )
         }
@@ -393,11 +384,10 @@ fun SummaryBlock(
     ) {
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 24.dp),
-            color = Color(0xFFE2E2E2),
+            color = MaterialTheme.colorScheme.tertiaryContainer,
             thickness = 1.dp
         )
 
-        // Subtotal
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -408,21 +398,20 @@ fun SummaryBlock(
             Text(
                 text = stringResource(CoreR.string.subtotal),
                 style = B_14,
-                color = Color(0xFF333333),
+                color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
-                text = subtotal.amount.toPlainString() + " " + subtotal.currency,
+                text = subtotal.amount.toLocalizedMoney() + " " + subtotal.currency,
                 style = B_14,
-                color = Color(0xFF333333),
+                color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Right,
             )
         }
 
-        // Promotions
         if (appliedPromotions.isNotEmpty()) {
             HorizontalDivider(
                 modifier = Modifier.padding(top = 8.dp),
-                color = Color(0xFFE2E2E2),
+                color = MaterialTheme.colorScheme.tertiaryContainer,
                 thickness = 1.dp
             )
 
@@ -432,12 +421,11 @@ fun SummaryBlock(
 
             HorizontalDivider(
                 modifier = Modifier.padding(top = 8.dp),
-                color = Color(0xFFE2E2E2),
+                color = MaterialTheme.colorScheme.tertiaryContainer,
                 thickness = 1.dp
             )
         }
 
-        // Total
         val discount = appliedPromotions.sumOf {
             when (val type = it.benefitType) {
                 is AppliedPromotion.BenefitType.Coupon -> BigDecimal.ZERO
@@ -455,17 +443,15 @@ fun SummaryBlock(
             Text(
                 text = stringResource(CoreR.string.total),
                 style = B_18_26,
-                color = Color(0xFF333333),
+                color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
-                text = total.toPlainString() + " " + subtotal.currency,
+                text = total.toLocalizedMoney() + " " + subtotal.currency,
                 style = B_18_26,
-                color = Color(0xFF333333),
+                color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Right,
             )
         }
-
-        Spacer(Modifier.height(80.dp))
     }
 }
 
@@ -479,24 +465,58 @@ fun AppliedPromotionItem(appliedPromotion: AppliedPromotion, modifier: Modifier 
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = appliedPromotion.promotion.promotionId.toString(),
-            style = B_14,
-            color = Color(0xFF333333),
-        )
-        Text(
             text = appliedPromotion.promotion.name,
             style = B_14,
-            color = Color(0xFF333333),
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
         )
+        Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = when (val type = appliedPromotion.benefitType) {
                 is AppliedPromotion.BenefitType.Coupon -> "Coupon(${type.couponId})"
-                is AppliedPromotion.BenefitType.Discount -> "-${type.totalSavings.amount} ${type.totalSavings.currency}"
+                is AppliedPromotion.BenefitType.Discount -> "-${type.totalSavings.amount.toLocalizedMoney()} ${type.totalSavings.currency}"
             },
             style = B_14,
-            color = Color(0xFF109C42),
-            textAlign = TextAlign.Right,
+            color = green,
+            textAlign = TextAlign.End,
         )
     }
 }
 
+@Composable
+private fun FooterButtons(
+    viewModel: BasketScreenViewModel,
+    uiState: BasketScreenState.DataLoaded
+) {
+    Row(
+        modifier = Modifier
+            .height(IntrinsicSize.Max)
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+            )
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        AppButton(
+            style = ButtonStyle.Flat,
+            text = stringResource(id = R.string.basket_add_more),
+            onClick = { viewModel.obtainEvent(BasketScreenEvent.OnAddMoreClicked) },
+            leadingIcon = IconWrapper.Vector(Icons.Outlined.Add),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+        )
+
+        AppButton(
+            text = stringResource(id = R.string.basket_checkout),
+            isEnabled = uiState.items.isNotEmpty(),
+            onClick = { viewModel.obtainEvent(BasketScreenEvent.OnCheckoutClicked) },
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+        )
+    }
+}

@@ -27,7 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -41,17 +40,19 @@ import com.immflyretail.inseat.sampleapp.core.extension.execute
 import com.immflyretail.inseat.sampleapp.core.extension.toBitmapPainter
 import com.immflyretail.inseat.sampleapp.product.R
 import com.immflyretail.inseat.sampleapp.product_api.ProductScreenContract
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_18
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_22_30
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_10
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_16_24
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_18_26
+import com.immflyretail.inseat.sampleapp.theme.red
 import com.immflyretail.inseat.sampleapp.ui.AppButton
 import com.immflyretail.inseat.sampleapp.ui.AppIconButton
 import com.immflyretail.inseat.sampleapp.ui.AppScaffold
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_18
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_22_30
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_10
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16_24
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_18_26
 import com.immflyretail.inseat.sampleapp.ui.Loading
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
+import com.immflyretail.inseat.sampleapp.ui.StoreClosedBanner
 import com.immflyretail.inseat.sampleapp.ui.utils.IconWrapper
 import com.immflyretail.inseat.sdk.api.models.Product
 import com.immflyretail.inseat.sampleapp.core.resources.R as CoreR
@@ -111,7 +112,7 @@ private fun ContentScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.primaryContainer)
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -133,7 +134,7 @@ private fun ContentScreen(
                 .padding(top = 24.dp),
             text = uiState.product.name,
             style = B_22_30,
-            color = Color(0xFF333333),
+            color = MaterialTheme.colorScheme.onBackground,
         )
 
         val priceData = uiState.product.prices.first()
@@ -143,7 +144,7 @@ private fun ContentScreen(
                 .padding(top = 9.dp),
             text = priceData.amount.toString() + " " + priceData.currency,
             style = N_18_26,
-            color = Color(0xFF333333),
+            color = MaterialTheme.colorScheme.onBackground,
         )
 
         Box(
@@ -151,7 +152,7 @@ private fun ContentScreen(
                 .padding(top = 24.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFFF2F2F2)),
+                .background(MaterialTheme.colorScheme.surfaceContainer),
         ) {
             Text(
                 modifier = Modifier
@@ -159,7 +160,7 @@ private fun ContentScreen(
                     .padding(16.dp),
                 text = uiState.product.description,
                 style = N_16_24,
-                color = Color(0xFF666666),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -179,34 +180,17 @@ private fun ContentScreen(
                 AppButton(
                     text = stringResource(R.string.confirm_button),
                     onClick = { eventReceiver(ProductScreenEvent.OnConfirmClicked) },
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
                 )
             }
         } else {
-            InfoBlock(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 24.dp)
+            StoreClosedBanner(
+                text = stringResource(CoreR.string.shop_has_not_opened_yet),
+                modifier = Modifier.padding(top = 24.dp)
             )
         }
-    }
-}
-
-@Composable
-fun InfoBlock(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFEBEEF6))
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = stringResource(R.string.shop_has_not_opened_yet),
-            style = N_16_24,
-            color = Color(0xFF333333),
-        )
     }
 }
 
@@ -237,7 +221,7 @@ private fun ShopItemStatus(
                 modifier = Modifier
                     .height(32.dp)
                     .clip(RoundedCornerShape(32.dp))
-                    .background(Color(0xFFE2E2E2)),
+                    .background(MaterialTheme.colorScheme.tertiaryContainer),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -256,7 +240,7 @@ private fun ShopItemStatus(
                     modifier = Modifier.padding(horizontal = 24.dp),
                     text = selectedQuantity.toString(),
                     style = B_18,
-                    color = Color(0xFF333333),
+                    color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center,
                 )
 
@@ -281,14 +265,14 @@ private fun OutOfStockLabel(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFFF8F8F8)),
+            .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center
     ) {
         Text(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             text = stringResource(CoreR.string.out_of_stock),
             style = N_10,
-            color = Color(0xFFD40E14),
+            color = red,
             textAlign = TextAlign.Center,
         )
     }
@@ -302,14 +286,14 @@ private fun LimitReachedLabel(
         modifier = modifier
             .padding(bottom = 8.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFFF8F8F8)),
+            .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center
     ) {
         Text(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             text = stringResource(CoreR.string.limit_reached),
             style = N_10,
-            color = Color(0xFFD40E14),
+            color = red,
             textAlign = TextAlign.Center,
         )
     }

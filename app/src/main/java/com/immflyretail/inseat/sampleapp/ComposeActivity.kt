@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
-import com.immflyretail.inseat.sampleapp.ui.theme.ImmseatTheme
+import com.immflyretail.inseat.sampleapp.ui.theme.AppTheme
 import com.immflyretail.inseat.sdk.api.InseatApi
 import com.immflyretail.inseat.sdk.api.NetworkException
 import dagger.hilt.android.AndroidEntryPoint
@@ -35,7 +35,7 @@ class ComposeActivity : ComponentActivity() {
                 api.start()
                 keepSplashScreen = false
 
-                setContent { ImmseatTheme { NavigationHost() } }
+                setContent { AppTheme { NavigationHost() } }
             }
         }
     }

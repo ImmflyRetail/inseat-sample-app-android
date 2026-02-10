@@ -43,7 +43,6 @@ internal class ListRepositoryImpl @Inject constructor(
 ) : ShopRepository {
 
     override suspend fun getProductsObserver(category: Category) = withContext(dispatchersProvider.getIO()) {
-        println("azazazaz Observing products for category: ${category.name}")
         inseatApi.observeProducts(category)
     }
 
@@ -56,12 +55,10 @@ internal class ListRepositoryImpl @Inject constructor(
     }
 
     override suspend fun fetchProducts(category: Category): List<Product> = withContext(dispatchersProvider.getIO()) {
-        println("azazazaz Fetching products for category: ${category.name}")
         inseatApi.fetchProducts(category = category)
     }
 
     override suspend fun fetchPromotions(): List<Promotion> = withContext(dispatchersProvider.getIO()) {
-        println("azazazaz FetchPromotions")
         inseatApi.fetchPromotions()
     }
 

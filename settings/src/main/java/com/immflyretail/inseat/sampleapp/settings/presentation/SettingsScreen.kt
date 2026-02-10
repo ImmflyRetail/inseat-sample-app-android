@@ -21,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -32,8 +31,9 @@ import androidx.navigation.compose.composable
 import com.immflyretail.inseat.sampleapp.core.extension.execute
 import com.immflyretail.inseat.sampleapp.settings.R
 import com.immflyretail.inseat.sampleapp.settings_api.SettingsScreenContract
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_12
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16_24
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_12
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_16_24
+import com.immflyretail.inseat.sampleapp.ui.AppScaffold
 import com.immflyretail.inseat.sampleapp.ui.Loading
 import com.immflyretail.inseat.sampleapp.ui.AppScaffold
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
@@ -106,13 +106,13 @@ private fun ContentScreen(
                 Text(
                     text = stringResource(R.string.data_refresh_type),
                     style = N_16_24,
-                    color = Color(0xFF333333),
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
 
-                val selectedBackground = Color(0xFFDD083A)
-                val unselectedBackground = Color(0xFFF8F8F8)
-                val selectedText = Color(0xFFFFFFFF)
-                val unselectedText = Color(0xFF666666)
+                val selectedBackground = MaterialTheme.colorScheme.primary
+                val unselectedBackground = MaterialTheme.colorScheme.surfaceVariant
+                val selectedText = MaterialTheme.colorScheme.onPrimary
+                val unselectedText = MaterialTheme.colorScheme.onSurfaceVariant
 
                 Row(
                     modifier = Modifier

@@ -5,7 +5,6 @@ import android.util.Base64
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,9 +28,7 @@ import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -53,28 +50,29 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.immflyretail.inseat.sampleapp.core.extension.execute
 import com.immflyretail.inseat.sampleapp.promotion.R
+import com.immflyretail.inseat.sampleapp.promotion.presentation.composables.SpendLimitProgressBar
 import com.immflyretail.inseat.sampleapp.promotion.presentation.model.PromotionBlock
 import com.immflyretail.inseat.sampleapp.promotion.presentation.model.PromotionItem
 import com.immflyretail.inseat.sampleapp.promotion_api.PromotionContract
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_10
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_14
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_14_22
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_18_26
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_10
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_12_20
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_16_24
+import com.immflyretail.inseat.sampleapp.theme.green
+import com.immflyretail.inseat.sampleapp.theme.red
+import com.immflyretail.inseat.sampleapp.theme.superLightGreen
 import com.immflyretail.inseat.sampleapp.ui.AppButton
 import com.immflyretail.inseat.sampleapp.ui.AppIconButton
 import com.immflyretail.inseat.sampleapp.ui.AppScaffold
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_10
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14_22
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_18_26
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_10
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_12_20
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16_24
 import com.immflyretail.inseat.sampleapp.ui.Loading
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
+import com.immflyretail.inseat.sampleapp.ui.StoreClosedBanner
 import com.immflyretail.inseat.sampleapp.ui.utils.IconWrapper
-import com.immflyretail.inseat.sdk.api.models.Money
 import java.math.BigDecimal
-import java.math.RoundingMode
-import kotlin.math.min
 import com.immflyretail.inseat.sampleapp.core.resources.R as CoreR
 
 private var currency: String = ""
@@ -142,7 +140,7 @@ fun MainData(
             val triggerType = uiState.triggerType
             if (triggerType is PromotionTriggerType.SpendLimit) {
                 item {
-                    SpendLimitProgress(
+                    SpendLimitProgressBar(
                         spendLimit = triggerType.haveToSpend,
                         selectedAmount = uiState.blocks.sumOf {
                             (it as? PromotionBlock.SpendLimitBlock)?.selectedItemsPrice
@@ -152,18 +150,30 @@ fun MainData(
                 }
             }
 
+            if (!uiState.isShopAvailable) {
+                item {
+                    StoreClosedBanner(stringResource(CoreR.string.shop_has_not_opened_yet),)
+                }
+            }
+
             uiState.blocks.forEachIndexed { index, item ->
                 if (index != 0) {
-                    item { HorizontalDivider(thickness = 1.dp, color = Color(0xFFE2E2E2)) }
+                    item { HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.tertiaryContainer) }
                 }
-                item { PromotionBlock(item, eventReceiver) }
+                item {
+                    PromotionBlock(
+                        item,
+                        isShopAvailable = uiState.isShopAvailable,
+                        eventReceiver = eventReceiver,
+                    )
+                }
             }
 
             item {
                 AppButton(
                     text = stringResource(id = R.string.promotion_builder_add_to_basket_button),
                     onClick = { eventReceiver(PromotionBuilderScreenEvent.AddToCartClicked) },
-                    isEnabled = uiState.isCompleted,
+                    isEnabled = uiState.isCompleted && uiState.isShopAvailable,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -185,7 +195,7 @@ fun PromotionInfo(
     ) {
         Column(
             modifier = Modifier
-                .background(Color(0xFFF2F2F2))
+                .background(MaterialTheme.colorScheme.surfaceContainer )
                 .fillMaxWidth()
                 .wrapContentHeight()
                 .padding(16.dp),
@@ -202,78 +212,7 @@ fun PromotionInfo(
             Text(
                 text = description,
                 style = N_16_24,
-                color = Color(0xFF666666)
-            )
-        }
-    }
-}
-
-@Composable
-fun SpendLimitProgress(
-    spendLimit: Money,
-    selectedAmount: BigDecimal,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF2F2F2))
-                .padding(16.dp),
-        ) {
-            LinearProgressIndicator(
-                progress = {
-                    min(
-                        selectedAmount.divide(spendLimit.amount, 2, RoundingMode.HALF_EVEN)
-                            .toFloat(), 1f
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp),
-                color = Color(0xFFDD083A),
-                trackColor = Color(0xFFE2E2E2),
-                strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
-            )
-
-            val delta = spendLimit.amount - selectedAmount
-
-            Row(
-                modifier = Modifier.align(Alignment.BottomStart),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                if (delta > BigDecimal.ZERO) {
-                    Text(
-                        text = delta.toPlainString() + spendLimit.currency,
-                        style = B_14
-                    )
-                    Text(
-                        text = stringResource(R.string.away_to_unlock_benefits),
-                        style = N_14,
-                        color = Color(0xFF666666)
-                    )
-                } else {
-                    Text(
-                        text = stringResource(R.string.spend_limit_reached),
-                        style = N_14,
-                        color = Color(0xFF333333)
-                    )
-
-                    Image(
-                        painterResource(id = CoreR.drawable.ic_order_success),
-                        contentDescription = stringResource(id = CoreR.string.completed)
-                    )
-                }
-            }
-
-            Text(
-                modifier = Modifier.align(Alignment.BottomEnd),
-                text = spendLimit.amount.toPlainString() + spendLimit.currency,
-                style = N_14,
-                color = Color(0xFF333333)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -282,6 +221,7 @@ fun SpendLimitProgress(
 @Composable
 fun PromotionBlock(
     block: PromotionBlock,
+    isShopAvailable: Boolean,
     eventReceiver: (PromotionBuilderScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -304,7 +244,7 @@ fun PromotionBlock(
                             block.expectedSelectedItems
                         ),
                         style = B_18_26,
-                        color = Color(0xFF333333),
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
 
                     val isCompleted = block.selectedItems == block.expectedSelectedItems
@@ -312,11 +252,11 @@ fun PromotionBlock(
                     val labelTextColor: Color
 
                     if (isCompleted) {
-                        labelBackgroundColor = Color(0xFFE1F4E6)
-                        labelTextColor = Color(0xFF109C42)
+                        labelBackgroundColor = superLightGreen
+                        labelTextColor = green
                     } else {
-                        labelBackgroundColor = Color(0xFFE2E2E2)
-                        labelTextColor = Color(0xFF333333)
+                        labelBackgroundColor = MaterialTheme.colorScheme.tertiaryContainer
+                        labelTextColor = MaterialTheme.colorScheme.onBackground
                     }
                     Row(
                         modifier = Modifier
@@ -328,7 +268,7 @@ fun PromotionBlock(
                             Icon(
                                 modifier = Modifier.size(16.dp),
                                 imageVector = Icons.Outlined.Check,
-                                tint = Color(0xFF109C42),
+                                tint = green,
                                 contentDescription = stringResource(id = CoreR.string.completed)
                             )
                         } else {
@@ -352,7 +292,11 @@ fun PromotionBlock(
 
             is PromotionBlock.SpendLimitBlock -> {}
         }
-        PromotionsList(block.promotionItems, eventReceiver)
+        PromotionsList(
+            items = block.promotionItems,
+            isShopAvailable = isShopAvailable,
+            eventReceiver = eventReceiver
+        )
     }
 
 }
@@ -360,6 +304,7 @@ fun PromotionBlock(
 @Composable
 private fun PromotionsList(
     items: List<PromotionItem>,
+    isShopAvailable: Boolean,
     eventReceiver: (PromotionBuilderScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -370,7 +315,11 @@ private fun PromotionsList(
             .background(MaterialTheme.colorScheme.background)
     ) {
         items.forEach { item ->
-            ProductItem(promotionItem = item, eventReceiver = eventReceiver)
+            ProductItem(
+                promotionItem = item,
+                isShopAvailable = isShopAvailable,
+                eventReceiver = eventReceiver
+            )
         }
     }
 }
@@ -378,6 +327,7 @@ private fun PromotionsList(
 @Composable
 private fun ProductItem(
     promotionItem: PromotionItem,
+    isShopAvailable: Boolean,
     eventReceiver: (PromotionBuilderScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -385,8 +335,7 @@ private fun ProductItem(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .wrapContentHeight()
-            .clickable { eventReceiver(PromotionBuilderScreenEvent.OnAddItemClicked(item.itemId)) },
+            .wrapContentHeight(),
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
@@ -405,7 +354,7 @@ private fun ProductItem(
                     style = B_14_22,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = Color(0xFF333333)
+                    color = MaterialTheme.colorScheme.onBackground
                 )
 
                 Text(
@@ -414,7 +363,7 @@ private fun ProductItem(
                     minLines = 2,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = Color(0xFF666666)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Text(
@@ -422,7 +371,7 @@ private fun ProductItem(
                     style = N_12_20,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = Color(0xFF333333)
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
 
@@ -439,7 +388,7 @@ private fun ProductItem(
                 modifier = Modifier
                     .wrapContentHeight()
                     .wrapContentWidth()
-                    .background(Color(0xFFFFFFFF), shape = RoundedCornerShape(size = 8.dp))
+                    .background(Color.White, shape = RoundedCornerShape(size = 8.dp))
                     .padding(8.dp)
             ) {
                 Image(
@@ -460,6 +409,7 @@ private fun ProductItem(
                 .padding(8.dp)
                 .align(Alignment.BottomEnd),
             item = promotionItem,
+            isShopAvailable = isShopAvailable,
             eventReceiver = eventReceiver
         )
     }
@@ -468,6 +418,7 @@ private fun ProductItem(
 @Composable
 private fun ProductItemStatus(
     item: PromotionItem,
+    isShopAvailable: Boolean,
     eventReceiver: (PromotionBuilderScreenEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -478,27 +429,28 @@ private fun ProductItemStatus(
 
         item.selectedQuantity.toLong() == item.product.quantity -> {
             LimitReachedIcon(
-                item.selectedQuantity,
-                item.product.itemId,
-                eventReceiver,
-                modifier.width(106.dp)
+                selectedQuantity = item.selectedQuantity,
+                itemId = item.product.itemId,
+                eventReceiver = eventReceiver,
+                modifier = modifier.width(106.dp)
             )
         }
 
         item.selectedQuantity == 0 -> {
             NotSelectedIcon(
-                item.product.itemId,
-                eventReceiver,
-                modifier
+                isShopAvailable = isShopAvailable,
+                itemId = item.product.itemId,
+                eventReceiver = eventReceiver,
+                modifier = modifier
             )
         }
 
         item.selectedQuantity > 0 && item.selectedQuantity < item.product.quantity -> {
             SelectedIcon(
-                item.selectedQuantity,
-                item.product.itemId,
-                eventReceiver,
-                modifier.width(106.dp)
+                selectedQuantity = item.selectedQuantity,
+                itemId = item.product.itemId,
+                eventReceiver = eventReceiver,
+                modifier = modifier.width(106.dp)
             )
         }
     }
@@ -506,7 +458,9 @@ private fun ProductItemStatus(
 
 
 @Composable
-fun OutOfStockIcon(modifier: Modifier = Modifier) {
+fun OutOfStockIcon(
+    modifier: Modifier = Modifier
+) {
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.End,
@@ -517,14 +471,14 @@ fun OutOfStockIcon(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .wrapContentWidth()
                 .clip(RoundedCornerShape(14.dp))
-                .background(Color(0xFFF8F8F8)),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                 text = stringResource(CoreR.string.out_of_stock),
                 style = N_10,
-                color = Color(0xFFD40E14),
+                color = red,
                 textAlign = TextAlign.Center,
             )
         }
@@ -542,14 +496,16 @@ fun OutOfStockIcon(modifier: Modifier = Modifier) {
 @Composable
 fun NotSelectedIcon(
     itemId: Int,
+    isShopAvailable: Boolean,
     eventReceiver: (PromotionBuilderScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     AppIconButton(
         icon = IconWrapper.Vector(Icons.Outlined.Add),
         onClick = { eventReceiver(PromotionBuilderScreenEvent.OnAddItemClicked(itemId)) },
-        containerColor = Color(0xFFE2E2E2),
+        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
         contentDescriptionId = CoreR.string.add_item_content_description,
+        isEnabled = isShopAvailable,
         modifier = modifier.size(32.dp)
     )
 }
@@ -565,7 +521,7 @@ fun SelectedIcon(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
-            .background(Color(0xFFE2E2E2)),
+            .background(MaterialTheme.colorScheme.tertiaryContainer),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -579,7 +535,7 @@ fun SelectedIcon(
         Text(
             text = selectedQuantity.toString(),
             style = B_14,
-            color = Color(0xFF333333),
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
 
@@ -607,14 +563,14 @@ fun LimitReachedIcon(
             modifier = Modifier
                 .wrapContentWidth()
                 .clip(RoundedCornerShape(14.dp))
-                .background(Color(0xFFF8F8F8)),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                 text = stringResource(CoreR.string.limit_reached),
                 style = N_10,
-                color = Color(0xFFD40E14),
+                color = red,
                 textAlign = TextAlign.Center,
             )
         }
@@ -624,7 +580,7 @@ fun LimitReachedIcon(
                 .padding(top = 8.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFFE2E2E2)),
+                .background(MaterialTheme.colorScheme.tertiaryContainer),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -639,7 +595,7 @@ fun LimitReachedIcon(
             Text(
                 text = selectedQuantity.toString(),
                 style = B_14,
-                color = Color(0xFF333333),
+                color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
             )
 

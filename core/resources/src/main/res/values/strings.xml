@@ -8,9 +8,15 @@
     <string name="view_order_details">View order details</string>
     <string name="hide_order_details">Hide order details</string>
 
+    <string name="cancel_order_title">Cancel order?</string>
+    <string name="cancel_order_description">If you cancel this order, it will not be delivered to your seat.</string>
+    <string name="keep_order">Keep order</string>
+    <string name="cancel_order">Cancel order</string>
+
     <string name="limit_reached">Limit reached</string>
     <string name="out_of_stock">Out of stock</string>
     <string name="completed">Completed</string>
+    <string name="shop_has_not_opened_yet">The store is not open yet! Keep in mind that prices and stock may change when the store officially opens.</string>
 
     <string name="back">Back</string>
 

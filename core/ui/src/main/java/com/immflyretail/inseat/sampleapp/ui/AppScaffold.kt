@@ -3,7 +3,6 @@ package com.immflyretail.inseat.sampleapp.ui
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -11,11 +10,11 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -34,7 +33,7 @@ fun AppScaffold(
     content: @Composable () -> Unit = {}
 ) {
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             AppTopBar(
                 showTopBar = showTopBar,
@@ -47,12 +46,12 @@ fun AppScaffold(
         },
         modifier = modifier.fillMaxSize()
     ) { padding ->
-        Box(
+        Surface(
+            color = MaterialTheme.colorScheme.background,
             modifier = Modifier
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize(),
-            contentAlignment = Alignment.Center
         ) {
             content()
         }

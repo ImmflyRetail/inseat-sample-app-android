@@ -10,7 +10,6 @@
     <string name="order_status_delivered">Delivered</string>
     <string name="order_status_your_order_will_be_ready_soon">Delivery expected in 10 minutes.</string>
     <string name="order_status_cansellation_title">"Order prep hasn’t begun. You can still cancel your order. "</string>
-    <string name="order_status_cancel_order">Cancel order</string>
     <string name="my_orders">My orders</string>
     <string name="order_placed">Order placed</string>
     <string name="delivered">Delivered</string>

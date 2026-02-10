@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.navigation.toRoute
 import com.immflyretail.inseat.sampleapp.core.extension.runCoroutine
 import com.immflyretail.inseat.sampleapp.orders.data.OrdersRepository
+import com.immflyretail.inseat.sampleapp.orders.presentation.status.OrderStatusScreenActions.*
 import com.immflyretail.inseat.sampleapp.orders_api.OrdersScreenContract
 import com.immflyretail.inseat.sdk.api.InseatException
 import com.immflyretail.inseat.sdk.api.StoreException
@@ -27,9 +28,10 @@ class OrderStatusScreenViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<OrderStatusScreenState>(OrderStatusScreenState.Loading)
     val uiState: StateFlow<OrderStatusScreenState> get() = _uiState
 
-    private val _uiAction = Channel<OrderStatusScreenAction>()
-    val uiAction: Flow<OrderStatusScreenAction> get() = _uiAction.receiveAsFlow()
-    private val orderId: String = savedStateHandle.toRoute<OrdersScreenContract.OrderStatusRoute>().orderId
+    private val _uiAction = Channel<OrderStatusScreenActions>()
+    val uiAction: Flow<OrderStatusScreenActions> get() = _uiAction.receiveAsFlow()
+    private val orderId: String =
+        savedStateHandle.toRoute<OrdersScreenContract.OrderStatusRoute>().orderId
 
 
     init {
@@ -42,7 +44,11 @@ class OrderStatusScreenViewModel @Inject constructor(
         if (state !is OrderStatusScreenState.Data) return
 
         when (event) {
-            is OrderStatusScreenEvent.OnCancelOrderClicked -> {
+            OrderStatusScreenEvent.OnCancelOrderClicked -> {
+                runCoroutine { _uiAction.send(ShowBottomSheet) }
+            }
+
+            OrderStatusScreenEvent.OnConfirmOrderCancellationClicked -> {
                 _uiState.value = OrderStatusScreenState.Loading
                 runCoroutine {
                     repository.cancelOrder(orderId) { result ->
@@ -58,7 +64,7 @@ class OrderStatusScreenViewModel @Inject constructor(
             }
 
             OrderStatusScreenEvent.OnBackClicked -> runCoroutine {
-                _uiAction.send(OrderStatusScreenAction.Navigate { popBackStack() })
+                _uiAction.send(Navigate { popBackStack() })
             }
         }
     }

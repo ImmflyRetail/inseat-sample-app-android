@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import javax.inject.Inject
 
@@ -30,7 +31,8 @@ class PromotionBuilderScreenViewModel @Inject constructor(
     private val repository: PromotionRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<PromotionBuilderScreenState>(PromotionBuilderScreenState.Loading)
+    private val _uiState =
+        MutableStateFlow<PromotionBuilderScreenState>(PromotionBuilderScreenState.Loading)
     val uiState: StateFlow<PromotionBuilderScreenState> get() = _uiState
 
     private val _uiAction = Channel<PromotionBuilderScreenActions>()
@@ -53,7 +55,8 @@ class PromotionBuilderScreenViewModel @Inject constructor(
             }
 
             PromotionBuilderScreenEvent.AddToCartClicked -> runCoroutine {
-                val state = uiState.value as? PromotionBuilderScreenState.DataLoaded ?: return@runCoroutine
+                val state =
+                    uiState.value as? PromotionBuilderScreenState.DataLoaded ?: return@runCoroutine
                 repository.addToBasket(
                     state.blocks
                         .map { it.promotionItems.filter { promo -> promo.selectedQuantity > 0 } }
@@ -113,7 +116,12 @@ class PromotionBuilderScreenViewModel @Inject constructor(
                                 blocks.add(
                                     PromotionBlock.ProductPurchaseBlock(
                                         expectedSelectedItems = it.quantity,
-                                        promotionItems = listOf(PromotionItem(product, selectedQuantity = 0))
+                                        promotionItems = listOf(
+                                            PromotionItem(
+                                                product,
+                                                selectedQuantity = 0
+                                            )
+                                        )
                                     )
                                 )
                             }
@@ -126,13 +134,20 @@ class PromotionBuilderScreenViewModel @Inject constructor(
 
                         // find all products that belong to the expected category
                         val expectedProducts =
-                            products.filter { it.itemMasterId in (expectedCategory?.items ?: emptyList()) }
+                            products.filter {
+                                it.itemMasterId in (expectedCategory?.items ?: emptyList())
+                            }
 
                         if (expectedProducts.isNotEmpty()) {
                             blocks.add(
                                 PromotionBlock.ProductPurchaseBlock(
                                     expectedSelectedItems = promotionCategoryMetadata.quantity,
-                                    promotionItems = expectedProducts.map { PromotionItem(it, selectedQuantity = 0) }
+                                    promotionItems = expectedProducts.map {
+                                        PromotionItem(
+                                            it,
+                                            selectedQuantity = 0
+                                        )
+                                    }
                                 )
                             )
                         }
@@ -150,11 +165,14 @@ class PromotionBuilderScreenViewModel @Inject constructor(
                     )
 
                     // find expected category from fetched promotion categories
-                    val expectedCategory = promotionCategories.find { it.id == promotion.spendLimitCategoryId }
+                    val expectedCategory =
+                        promotionCategories.find { it.id == promotion.spendLimitCategoryId }
 
                     // find all products that belong to the expected category
                     val expectedProducts =
-                        products.filter { it.itemMasterId in (expectedCategory?.items ?: emptyList()) }
+                        products.filter {
+                            it.itemMasterId in (expectedCategory?.items ?: emptyList())
+                        }
 
                     if (expectedProducts.isNotEmpty()) {
                         blocks.add(
@@ -167,14 +185,19 @@ class PromotionBuilderScreenViewModel @Inject constructor(
                 }
             }
 
-            _uiState.value = PromotionBuilderScreenState.DataLoaded(
-                title = promotion.name,
-                savings = savings,
-                description = promotion.discountText,
-                triggerType = triggerType,
-                blocks = blocks,
-                currency = currency
-            )
+            launch {
+                repository.observeShopAvailableStatus().collect { isShopAvailable ->
+                    _uiState.value = PromotionBuilderScreenState.DataLoaded(
+                        title = promotion.name,
+                        savings = savings,
+                        description = promotion.discountText,
+                        triggerType = triggerType,
+                        blocks = blocks,
+                        currency = currency,
+                        isShopAvailable = isShopAvailable,
+                    )
+                }
+            }
         } catch (e: InseatException) {
             _uiState.value = PromotionBuilderScreenState.Error(e.message ?: "Unknown error")
         }
@@ -186,9 +209,11 @@ class PromotionBuilderScreenViewModel @Inject constructor(
         this.categoryId == id || this.subcategories.any { subcategory -> subcategory.id == categoryId }
 
 
-    private fun PromotionBuilderScreenState.increaseSelectedQuantity(itemId: Int) = updateQuantity(itemId, 1)
+    private fun PromotionBuilderScreenState.increaseSelectedQuantity(itemId: Int) =
+        updateQuantity(itemId, 1)
 
-    private fun PromotionBuilderScreenState.decreaseSelectedQuantity(itemId: Int) = updateQuantity(itemId, -1)
+    private fun PromotionBuilderScreenState.decreaseSelectedQuantity(itemId: Int) =
+        updateQuantity(itemId, -1)
 
     private fun PromotionBuilderScreenState.updateQuantity(itemId: Int, modifier: Int) {
         val state = this as? PromotionBuilderScreenState.DataLoaded ?: return
@@ -224,7 +249,8 @@ class PromotionBuilderScreenViewModel @Inject constructor(
 
             is PromotionBlock.SpendLimitBlock -> {
                 val price =
-                    clickedPromotionItem.product.prices.find { it.currency == currency }?.amount ?: BigDecimal.ZERO
+                    clickedPromotionItem.product.prices.find { it.currency == currency }?.amount
+                        ?: BigDecimal.ZERO
                 newPromotionBlock = blockForUpdate.copy(
                     selectedItemsPrice = blockForUpdate.selectedItemsPrice + (price * modifier.toBigDecimal()),
                     promotionItems = newPromotionItems
@@ -247,8 +273,9 @@ class PromotionBuilderScreenViewModel @Inject constructor(
             is PromotionTriggerType.SpendLimit -> {
                 val selectedAmount = promoBlocks.sumOf { block ->
                     block.promotionItems.sumOf { promotionItem ->
-                        val price = promotionItem.product.prices.find { it.currency == currency }?.amount
-                            ?: BigDecimal.ZERO
+                        val price =
+                            promotionItem.product.prices.find { it.currency == currency }?.amount
+                                ?: BigDecimal.ZERO
 
                         price.multiply(promotionItem.selectedQuantity.toBigDecimal())
                     }

@@ -9,6 +9,10 @@ import com.immflyretail.inseat.sdk.api.models.Category
 import com.immflyretail.inseat.sdk.api.models.Product
 import com.immflyretail.inseat.sdk.api.models.Promotion
 import com.immflyretail.inseat.sdk.api.models.PromotionCategory
+import com.immflyretail.inseat.sdk.api.models.Shop
+import com.immflyretail.inseat.sdk.api.models.StatusEnum
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -18,6 +22,8 @@ interface PromotionRepository {
     suspend fun fetchPromotion(promotionId: Int): Promotion
     suspend fun fetchPromotionCategories(): List<PromotionCategory>
     suspend fun addToBasket(items: List<PromotionItem>)
+
+    suspend fun observeShopAvailableStatus(): Flow<Boolean>
 }
 
 internal class PromotionRepositoryImpl @Inject constructor(
@@ -45,5 +51,11 @@ internal class PromotionRepositoryImpl @Inject constructor(
             basket[item.product.itemId] = (basket[item.product.itemId] ?: 0) + item.selectedQuantity
         }
         preferencesManager.write(BASKET, Json.encodeToString(basket))
+    }
+
+    override suspend fun observeShopAvailableStatus(): Flow<Boolean> = withContext(dispatchersProvider.getIO()) {
+        inseatApi.observeShop().map { shopInfo ->
+            shopInfo is Shop && shopInfo.status == StatusEnum.ORDER
+        }
     }
 }

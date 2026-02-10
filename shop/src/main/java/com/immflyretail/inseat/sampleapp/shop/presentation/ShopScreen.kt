@@ -75,27 +75,31 @@ import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopItem
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopStatus
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.TabItem
 import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_14
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_14_22
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_16
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_16_24
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_18_26
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_22_30
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_8_13
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_10
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_12_20
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_14
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_14_22
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_16
+import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.N_18_26
+import com.immflyretail.inseat.sampleapp.theme.green
+import com.immflyretail.inseat.sampleapp.theme.red
+import com.immflyretail.inseat.sampleapp.theme.superLightOrange
+import com.immflyretail.inseat.sampleapp.theme.superLightRed
 import com.immflyretail.inseat.sampleapp.ui.AppButton
 import com.immflyretail.inseat.sampleapp.ui.AppIconButton
+import com.immflyretail.inseat.sampleapp.ui.AppScaffold
 import com.immflyretail.inseat.sampleapp.ui.ButtonStyle
 import com.immflyretail.inseat.sampleapp.ui.ErrorScreen
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_14_22
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_16
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_16_24
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_18_26
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_22_30
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.B_8_13
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_10
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_12_20
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_14_22
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_16_24
-import com.immflyretail.inseat.sampleapp.ui.InseatTextStyle.N_18_26
 import com.immflyretail.inseat.sampleapp.ui.Loading
-import com.immflyretail.inseat.sampleapp.ui.AppScaffold
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
+import com.immflyretail.inseat.sampleapp.ui.StoreClosedBanner
 import com.immflyretail.inseat.sampleapp.ui.utils.IconWrapper
 import com.immflyretail.inseat.sdk.api.models.Menu
 import com.immflyretail.inseat.sdk.api.models.Promotion
@@ -137,7 +141,9 @@ fun ShopScreen(
                     query = (uiState as ShopScreenState.DataLoaded).searchQuery,
                     eventReceiver = viewModel::obtainEvent,
                     searchFieldFocusRequester = searchFieldFocusRequester,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
                 )
             }
         } else null,
@@ -213,6 +219,7 @@ private fun ShopActions(
     }
 }
 
+
 @Composable
 private fun BasketIcon(
     itemsInBasket: Int,
@@ -229,14 +236,14 @@ private fun BasketIcon(
             Box(
                 modifier = Modifier
                     .size(14.dp)
-                    .background(Color(0xFFD40E14), shape = CircleShape)
+                    .background(red, shape = CircleShape)
                     .align(Alignment.BottomCenter),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = itemsInBasket.toString(),
                     style = B_8_13,
-                    color = Color(0xFFFFFFFF),
+                    color = Color.White,
                     textAlign = TextAlign.Center,
                 )
             }
@@ -254,7 +261,7 @@ fun OrdersInfo(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.primaryContainer)
-            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+            .padding(16.dp),
     ) {
         AppButton(
             style = ButtonStyle.Flat,
@@ -264,7 +271,7 @@ fun OrdersInfo(
             modifier = modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFFF8F8F8)),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
         )
     }
 }
@@ -313,10 +320,6 @@ fun MainData(
 
                 if (uiState.tabs.isNotEmpty()) {
                     ShopTabs(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .background(Color(0xFFF2F2F2)),
                         selectedTabIndex = uiState.selectedTabIndex,
                         tabs = uiState.tabs,
                         eventReceiver = eventReceiver
@@ -327,11 +330,11 @@ fun MainData(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
-                        .background(Color(0xFFF2F2F2))
+                        .background(MaterialTheme.colorScheme.primaryContainer)
                         .padding(start = 16.dp, top = 20.dp),
                     text = stringResource(R.string.search_results, uiState.searchResult.size),
                     style = B_18_26,
-                    color = Color(0xFF333333),
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
             }
 
@@ -402,7 +405,9 @@ private fun ShopTabs(
     modifier: Modifier = Modifier
 ) {
     SecondaryScrollableTabRow(
-        modifier = modifier,
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background),
         selectedTabIndex = selectedTabIndex,
         containerColor = Color.Transparent,
         indicator = {
@@ -411,10 +416,8 @@ private fun ShopTabs(
                     selectedTabIndex,
                     matchContentSize = false
                 ),
-                color = Color(0xFFDD083A)
             )
         },
-        divider = {},
         edgePadding = 0.dp
     ) {
         tabs.forEachIndexed { index, tab ->
@@ -453,7 +456,7 @@ private fun ProductsList(
     ) {
         if (shopStatus != ShopStatus.ORDER) {
             item(span = { GridItemSpan(2) }) {
-                InfoBlock()
+                StoreClosedBanner(text = stringResource(R.string.the_store_is_not_open_yet))
             }
         }
         items(items) { item ->
@@ -478,7 +481,9 @@ private fun PromotionsList(
             .background(MaterialTheme.colorScheme.background)
     ) {
         if (shopStatus != ShopStatus.ORDER) {
-            item { InfoBlock() }
+            item {
+                StoreClosedBanner(stringResource(R.string.the_store_is_not_open_yet))
+            }
         }
         items(items) { item ->
             PromotionItem(item = item, currency = currency, eventReceiver = eventReceiver)
@@ -497,13 +502,13 @@ fun ItemNotFound(modifier: Modifier = Modifier) {
         Text(
             text = stringResource(R.string.no_result_found),
             style = B_22_30,
-            color = Color(0xFF333333),
+            color = MaterialTheme.colorScheme.onBackground,
         )
         Text(
             modifier = Modifier.padding(top = 8.dp),
             text = stringResource(R.string.no_result_found_description),
             style = N_18_26,
-            color = Color(0xFF666666),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -542,17 +547,17 @@ fun SearchTopBar(
             onValueChange = { eventReceiver(ShopScreenEvent.OnSearch(it)) },
             shape = RoundedCornerShape(8.dp),
             colors = TextFieldDefaults.colors().copy(
-                focusedTextColor = Color(0xFF333333),
-                unfocusedTextColor = Color(0xFF333333),
-                cursorColor = Color(0xFF333333),
-                focusedPlaceholderColor = Color(0xFF666666),
-                unfocusedPlaceholderColor = Color(0xFF666666),
-                focusedContainerColor = Color(0xFFF8F8F8),
-                unfocusedContainerColor = Color(0xFFF8F8F8),
+                focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                cursorColor = MaterialTheme.colorScheme.onBackground,
+                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                focusedLeadingIconColor = Color(0xFF666666),
-                unfocusedLeadingIconColor = Color(0xFF666666)
+                focusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
             ),
         )
     }
@@ -611,9 +616,9 @@ private fun ListItem(
             }
 
             val textColor = if (item.product.quantity > 0) {
-                Color(0xFF333333)
+                MaterialTheme.colorScheme.onBackground
             } else {
-                Color(0xB3575555)
+                MaterialTheme.colorScheme.onPrimaryContainer
             }
 
             Text(
@@ -658,13 +663,13 @@ private fun PromotionItem(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .clickable { eventReceiver(ShopScreenEvent.OnPromotionClicked(item.promotionId)) },
+            .clickable { eventReceiver(ShopScreenEvent.OnPromotionClicked(item.promotionId)) }
     ) {
         Box(modifier = modifier.fillMaxSize()) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .background(MaterialTheme.colorScheme.surface)
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(18.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -683,7 +688,7 @@ private fun PromotionItem(
                         style = B_16_24,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        color = Color(0xFF333333)
+                        color = MaterialTheme.colorScheme.onBackground
                     )
 
                     Text(
@@ -693,11 +698,11 @@ private fun PromotionItem(
                         minLines = 2,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = Color(0xFF666666)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     val discount = item.discounts.firstOrNull { it.currency == currency }
-                    var textColor = Color(0xFF109C42)
+                    var textColor = green
                     val savings = when (item.benefitType) {
                         Promotion.BenefitType.DISCOUNT -> when (item.discountType) {
                             Promotion.DiscountType.PERCENTAGE -> stringResource(
@@ -712,7 +717,7 @@ private fun PromotionItem(
                             )
 
                             Promotion.DiscountType.FIXED_PRICE -> {
-                                textColor = Color(0xFF333333)
+                                textColor = MaterialTheme.colorScheme.onBackground
                                 stringResource(
                                     id = R.string.shop_promotion_fixed_price,
                                     discount?.discount.toString(),
@@ -767,7 +772,7 @@ private fun PromotionItem(
                 modifier = modifier
                     .padding(8.dp)
                     .size(32.dp)
-                    .background(Color(0xFFE2E2E2), shape = CircleShape)
+                    .background(MaterialTheme.colorScheme.tertiaryContainer, shape = CircleShape)
                     .align(Alignment.BottomEnd),
                 contentAlignment = Alignment.Center
             ) {
@@ -817,9 +822,9 @@ private fun ShopItemStatus(
 @Composable
 fun StatusRow(shopStatus: ShopStatus, modifier: Modifier = Modifier) {
     val rowBackground = if (shopStatus == ShopStatus.OPEN) {
-        Color(0xFFFDF6E2)
+        superLightOrange
     } else {
-        Color(0xFFFDE7E8)
+        superLightRed
     }
 
     val statusText = when (shopStatus) {
@@ -829,7 +834,7 @@ fun StatusRow(shopStatus: ShopStatus, modifier: Modifier = Modifier) {
         else -> ""
     }
 
-    val rowTextColor = Color(0xFFD40E14)
+    val rowTextColor = red
 
     Row(
         modifier = modifier
@@ -855,14 +860,14 @@ fun OutOfStockIcon(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .wrapContentWidth()
                 .clip(RoundedCornerShape(14.dp))
-                .background(Color(0xFFF8F8F8)),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                 text = stringResource(CoreR.string.out_of_stock),
                 style = N_10,
-                color = Color(0xFFD40E14),
+                color = red,
                 textAlign = TextAlign.Center,
             )
         }
@@ -871,7 +876,7 @@ fun OutOfStockIcon(modifier: Modifier = Modifier) {
                 .padding(start = 16.dp)
                 .size(32.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFF8F8F8)),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -893,7 +898,7 @@ fun NotSelectedIcon(
         icon = IconWrapper.Vector(Icons.Outlined.Add),
         onClick = { eventReceiver(ShopScreenEvent.OnAddItemClicked(itemId)) },
         contentDescriptionId = CoreR.string.add_item_content_description,
-        containerColor = Color(0xFFE2E2E2),
+        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
         modifier = modifier.size(32.dp)
     )
 }
@@ -909,7 +914,7 @@ fun SelectedIcon(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(32.dp))
-            .background(Color(0xFFE2E2E2)),
+            .background(MaterialTheme.colorScheme.tertiaryContainer),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -923,7 +928,7 @@ fun SelectedIcon(
         Text(
             text = selectedQuantity.toString(),
             style = B_14,
-            color = Color(0xFF333333),
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
 
@@ -951,14 +956,14 @@ fun LimitReachedIcon(
             modifier = Modifier
                 .wrapContentWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFFF8F8F8)),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                 text = stringResource(CoreR.string.limit_reached),
                 style = N_10,
-                color = Color(0xFFD40E14),
+                color = red,
                 textAlign = TextAlign.Center,
             )
         }
@@ -968,7 +973,7 @@ fun LimitReachedIcon(
                 .padding(top = 8.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(32.dp))
-                .background(Color(0xFFE2E2E2)),
+                .background(MaterialTheme.colorScheme.tertiaryContainer),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -981,7 +986,7 @@ fun LimitReachedIcon(
             Text(
                 text = selectedQuantity.toString(),
                 style = B_14,
-                color = Color(0xFF333333),
+                color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
             )
             AppIconButton(
@@ -1010,14 +1015,14 @@ fun MenuSelector(
         Text(
             text = stringResource(R.string.menu_selection),
             style = B_22_30,
-            color = Color(0xFF333333),
+            color = MaterialTheme.colorScheme.onBackground,
         )
 
         Text(
             modifier = Modifier.padding(top = 16.dp),
             text = stringResource(R.string.choose_which_menu_you_want_to_view_based_on_your_preferences),
             style = N_18_26,
-            color = Color(0xFF333333),
+            color = MaterialTheme.colorScheme.onBackground,
         )
 
         LazyColumn(
@@ -1034,24 +1039,6 @@ fun MenuSelector(
                 )
             })
         }
-    }
-}
-
-@Composable
-fun InfoBlock(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFEBEEF6))
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = stringResource(R.string.the_store_is_not_open_yet),
-            style = N_16_24,
-            color = Color(0xFF333333),
-        )
     }
 }
 
