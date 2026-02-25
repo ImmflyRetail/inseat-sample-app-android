@@ -4,4 +4,9 @@
     <string name="data_refresh_type">Data refresh type:</string>
     <string name="auto">Auto</string>
     <string name="manual">Manual</string>
+    <string name="about">About</string>
+    <string name="app_version">App Version:</string>
+    <string name="inseat_sdk_version">Inseat SDK Version:</string>
+    <string name="environment">Environment:</string>
+    <string name="icaos">ICAOs:</string>
 </resources>

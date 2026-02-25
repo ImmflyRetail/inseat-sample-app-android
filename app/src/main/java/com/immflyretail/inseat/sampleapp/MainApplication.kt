@@ -1,6 +1,8 @@
 package com.immflyretail.inseat.sampleapp
 
 import android.app.Application
+import com.immflyretail.inseat.sampleapp.core.AppConfig
+import com.immflyretail.inseat.sampleapp.core.AppEnvironment
 import com.immflyretail.inseat.sampleapp.preferences.api.preferencesmanager.BASKET
 import com.immflyretail.inseat.sampleapp.preferences.api.preferencesmanager.PreferencesManager
 import com.immflyretail.inseat.sdk.api.InseatApi
@@ -17,6 +19,9 @@ class MainApplication : Application() {
     @Inject
     lateinit var prefManager: PreferencesManager
 
+    @Inject
+    lateinit var appConfig: AppConfig
+
     override fun onCreate() {
         super.onCreate()
 
@@ -30,8 +35,8 @@ class MainApplication : Application() {
                 applicationContext = this@MainApplication,
                 configuration = Configuration(
                     apiKey = BuildConfig.API_KEY,
-                    supportedICAOs = listOf("WZZ", "WAZ"),
-                    environment = Environment.TEST,
+                    supportedICAOs = appConfig.supportedICAOs,
+                    environment = appConfig.environment.toInseatEnvironment(),
                 )
             )
 
@@ -39,4 +44,9 @@ class MainApplication : Application() {
             prefManager.remove(BASKET)
         }
     }
+}
+
+private fun AppEnvironment.toInseatEnvironment(): Environment = when (this) {
+    AppEnvironment.TEST -> Environment.TEST
+    AppEnvironment.LIVE -> Environment.LIVE
 }

@@ -1,6 +1,7 @@
 package com.immflyretail.inseat.sampleapp.settings.presentation
 
 import androidx.lifecycle.ViewModel
+import com.immflyretail.inseat.sampleapp.core.AppConfig
 import com.immflyretail.inseat.sampleapp.core.extension.runCoroutine
 import com.immflyretail.inseat.sampleapp.settings.data.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingsScreenViewModel @Inject constructor(
-    private val repository: SettingsRepository
+    private val appConfig: AppConfig,
+    private val repository: SettingsRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<SettingsScreenState>(SettingsScreenState.Loading)
@@ -49,6 +51,13 @@ class SettingsScreenViewModel @Inject constructor(
     }
 
     private fun loadData() = runCoroutine {
-        _uiState.value = SettingsScreenState.DataLoaded(repository.getAutoRefreshState())
+        _uiState.value = SettingsScreenState.DataLoaded(
+            isAutoRefreshEnabled = repository.getAutoRefreshState(),
+            isDebug = appConfig.isDebug,
+            appVersion = appConfig.appVersion,
+            sdkVersion = appConfig.sdkVersion,
+            environment = appConfig.environment.name,
+            supportedICAOs = appConfig.supportedICAOs.joinToString(", ")
+        )
     }
 }

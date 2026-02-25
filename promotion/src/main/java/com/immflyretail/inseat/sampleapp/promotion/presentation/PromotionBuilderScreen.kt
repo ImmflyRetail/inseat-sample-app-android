@@ -332,6 +332,7 @@ private fun ProductItem(
     modifier: Modifier = Modifier
 ) {
     val item = promotionItem.product
+    val priceData = item.prices.find { it.currency == currency }
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -366,8 +367,9 @@ private fun ProductItem(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
+
                 Text(
-                    text = item.prices.find { it.currency == currency }?.amount?.toPlainString() + currency,
+                    text = priceData?.let { it.amount.toPlainString() + currency } ?: "-",
                     style = N_12_20,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -410,7 +412,7 @@ private fun ProductItem(
                 .align(Alignment.BottomEnd),
             item = promotionItem,
             isShopAvailable = isShopAvailable,
-            eventReceiver = eventReceiver
+            eventReceiver = if (priceData == null) { _ -> } else eventReceiver
         )
     }
 }

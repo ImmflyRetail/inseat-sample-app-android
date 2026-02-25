@@ -9,6 +9,7 @@ import com.immflyretail.inseat.sdk.api.models.Category
 import com.immflyretail.inseat.sdk.api.models.Menu
 import com.immflyretail.inseat.sdk.api.models.Product
 import com.immflyretail.inseat.sdk.api.models.Promotion
+import com.immflyretail.inseat.sdk.api.models.PromotionCategory
 import com.immflyretail.inseat.sdk.api.models.ShopInfo
 import com.immflyretail.inseat.sdk.api.models.UserData
 import kotlinx.coroutines.flow.Flow
@@ -25,6 +26,7 @@ interface ShopRepository {
     suspend fun fetchProducts(category: Category): List<Product>
     suspend fun fetchCategories(): List<Category>
     suspend fun fetchPromotions(): List<Promotion>
+    suspend fun fetchPromotionCategories(): List<PromotionCategory>
     suspend fun fetchOrderCount(): Flow<Int>
     fun getBasketItemsFlow(): Flow<Map<Int, Int>>
     suspend fun removeFromBasketItem(id: Int)
@@ -41,9 +43,12 @@ internal class ListRepositoryImpl @Inject constructor(
     private val inseatApi: InseatApi,
     private val preferencesManager: PreferencesManager
 ) : ShopRepository {
+    private val productFlowCache = mutableMapOf<Int, StateFlow<List<Product>>>()
 
     override suspend fun getProductsObserver(category: Category) = withContext(dispatchersProvider.getIO()) {
-        inseatApi.observeProducts(category)
+        productFlowCache.getOrPut(category.id) {
+            inseatApi.observeProducts(category)
+        }
     }
 
     override suspend fun getShopObserver() = withContext(dispatchersProvider.getIO()) {
@@ -62,11 +67,15 @@ internal class ListRepositoryImpl @Inject constructor(
         inseatApi.fetchPromotions()
     }
 
+    override suspend fun fetchPromotionCategories(): List<PromotionCategory> = withContext(dispatchersProvider.getIO()) {
+        inseatApi.fetchPromotionCategories()
+    }
+
     override suspend fun isAutoupdateEnabled(): Boolean {
         return preferencesManager.read(AUTO_REFRESH, true)
     }
 
-    override fun getBasketItemsFlow(): Flow<Map<Int, Int>> = preferencesManager.asFlow(BASKET, "{}")
+    override fun getBasketItemsFlow(): Flow<Map<Int, Int>> = preferencesManager.asStringFlow(BASKET, "{}")
         .map { Json.decodeFromString<Map<Int, Int>>(it) }
 
     override suspend fun addToBasketItem(id: Int) {

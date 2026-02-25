@@ -21,5 +21,6 @@ interface PreferencesManager {
 
     suspend fun remove(key: String)
 
-    fun asFlow(key: String, defaultValue: String): Flow<String>
+    fun asStringFlow(key: String, defaultValue: String): Flow<String>
+    fun asBooleanFlow(key: String, defaultValue: Boolean): Flow<Boolean>
 }

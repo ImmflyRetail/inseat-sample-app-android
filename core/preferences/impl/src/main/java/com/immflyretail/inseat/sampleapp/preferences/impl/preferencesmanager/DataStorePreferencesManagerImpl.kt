@@ -55,8 +55,12 @@ internal class DataStorePreferencesManagerImpl @Inject constructor(
         return dataStore.data.first()[stringPreferencesKey(key)] ?: defaultValue
     }
 
-    override fun asFlow(key: String, defaultValue: String): Flow<String> = dataStore.data.map {
+    override fun asStringFlow(key: String, defaultValue: String): Flow<String> = dataStore.data.map {
         it[stringPreferencesKey(key)] ?: defaultValue
+    }
+
+    override fun asBooleanFlow(key: String, defaultValue: Boolean): Flow<Boolean> = dataStore.data.map {
+        it[booleanPreferencesKey(key)] ?: defaultValue
     }
 
     override suspend fun read(key: String, defaultValue: Int): Int {

@@ -5,20 +5,22 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.immflyretail.inseat.sampleapp.basket.presentation.basketScreen
 import com.immflyretail.inseat.sampleapp.checkout.presentation.checkoutScreen
+import com.immflyretail.inseat.sampleapp.menu.presentation.menuSelectorScreen
 import com.immflyretail.inseat.sampleapp.orders.presentation.order.ordersScreen
 import com.immflyretail.inseat.sampleapp.orders.presentation.status.ordersStatusScreen
 import com.immflyretail.inseat.sampleapp.product.presentation.productScreen
 import com.immflyretail.inseat.sampleapp.promotion.presentation.promotionBuilderScreen
 import com.immflyretail.inseat.sampleapp.settings.presentation.settingsScreen
 import com.immflyretail.inseat.sampleapp.shop.presentation.shopScreen
-import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
+import com.immflyretail.inseat.sampleapp.shop_api.MenuScreenContract
 
 @Composable
 fun NavigationHost() {
 
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = ShopScreenContract.Route) {
+    NavHost(navController = navController, startDestination = MenuScreenContract.Route) {
+        menuSelectorScreen(navController)
         shopScreen(navController)
         basketScreen(navController)
         checkoutScreen(navController)

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="error_message">Error loading menus. Please try again</string>
+    <string name="menu_selection">Menu selection</string>
+    <string name="choose_which_menu_you_want_to_view_based_on_your_preferences">Choose which menu you want to view based on your preferences.</string>
+    <string name="settings_icon_content_description">Settings Icon</string>
+</resources>

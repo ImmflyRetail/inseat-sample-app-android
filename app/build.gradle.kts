@@ -24,6 +24,8 @@ android {
         versionCode = libs.versions.versionCode.get().toInt()
         versionName = libs.versions.versionName.get()
         buildConfigField("String", "API_KEY", "\"${localProps.getProperty("API_KEY", "")}\"")
+        buildConfigField("String", "INSEAT_SDK_VERSION", "\"${libs.versions.inseat.get()}\"")
+        buildConfigField("String", "SUPPORTED_ICAOS", "\"${localProps.getProperty("SUPPORTED_ICAOS")}\"")
     }
 
     buildTypes {
@@ -61,6 +63,7 @@ dependencies {
     // Modules
     implementation(project(Modules.core_navigation))
     implementation(project(Modules.core_ui))
+    implementation(project(Modules.core_common))
     implementation(project(Modules.basket))
     implementation(project(Modules.shop))
     implementation(project(Modules.core_preferences_impl))
@@ -69,6 +72,7 @@ dependencies {
     implementation(project(Modules.product))
     implementation(project(Modules.checkout))
     implementation(project(Modules.promotion))
+    implementation(project(Modules.menu))
 
     // Inseat SDK
     implementation(libs.inseat)

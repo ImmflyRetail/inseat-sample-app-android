@@ -3,6 +3,7 @@ package com.immflyretail.inseat.sampleapp.shop.presentation
 import android.graphics.BitmapFactory
 import android.util.Base64
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,7 +30,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Close
@@ -71,9 +72,10 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.immflyretail.inseat.sampleapp.core.extension.execute
 import com.immflyretail.inseat.sampleapp.shop.R
+import com.immflyretail.inseat.sampleapp.shop.presentation.model.CategoryTabItem
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopItem
 import com.immflyretail.inseat.sampleapp.shop.presentation.model.ShopStatus
-import com.immflyretail.inseat.sampleapp.shop.presentation.model.TabItem
+import com.immflyretail.inseat.sampleapp.shop.presentation.model.SubcategoryTabItem
 import com.immflyretail.inseat.sampleapp.shop_api.ShopScreenContract
 import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_14
 import com.immflyretail.inseat.sampleapp.theme.AppTextStyle.B_14_22
@@ -101,7 +103,6 @@ import com.immflyretail.inseat.sampleapp.ui.Loading
 import com.immflyretail.inseat.sampleapp.ui.SingleEventEffect
 import com.immflyretail.inseat.sampleapp.ui.StoreClosedBanner
 import com.immflyretail.inseat.sampleapp.ui.utils.IconWrapper
-import com.immflyretail.inseat.sdk.api.models.Menu
 import com.immflyretail.inseat.sdk.api.models.Promotion
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -134,7 +135,7 @@ fun ShopScreen(
     AppScaffold(
         modifier = Modifier.background(color = MaterialTheme.colorScheme.background),
         title = stringResource(R.string.shop),
-        isBackButtonEnabled = isNeedToShowSearchBar,
+        isBackButtonEnabled = true,
         topBarSearch = if (isNeedToShowSearchBar) {
             {
                 SearchTopBar(
@@ -152,14 +153,6 @@ fun ShopScreen(
                 uiState is ShopScreenState.DataLoaded -> {
                     ShopActions(uiState, eventReceiver = viewModel::obtainEvent)
                 }
-
-                uiState is ShopScreenState.SelectMenu -> {
-                    AppIconButton(
-                        icon = IconWrapper.Vector(Icons.Default.Settings),
-                        onClick = { viewModel.obtainEvent(ShopScreenEvent.OnSettingsClicked) },
-                        contentDescriptionId = R.string.shop_settings_icon_content_description
-                    )
-                }
             }
         },
         onBackClicked = { viewModel.obtainEvent(ShopScreenEvent.OnBackClicked) }
@@ -172,13 +165,6 @@ fun ShopScreen(
 
             is ShopScreenState.Error -> ErrorScreen(
                 uiState.message ?: stringResource(id = R.string.shop_error_message)
-            )
-
-            is ShopScreenState.SelectMenu -> MenuSelector(
-                menus = uiState.menus,
-                onMenuSelected = { menuType ->
-                    viewModel.obtainEvent(ShopScreenEvent.OnMenuSelected(menuType))
-                }
             )
         }
 
@@ -194,7 +180,7 @@ fun ShopScreen(
             }
         }
 
-        BackHandler { viewModel.obtainEvent(ShopScreenEvent.OnBackClicked) }
+        BackHandler { navController.popBackStack() }
     }
 }
 
@@ -203,7 +189,7 @@ private fun ShopActions(
     uiState: ShopScreenState.DataLoaded,
     eventReceiver: (ShopScreenEvent) -> Unit
 ) {
-    if (uiState.tabs[uiState.selectedTabIndex] !is TabItem.PromotionTab && !uiState.isSearchEnabled) {
+    if (!uiState.isSearchEnabled) {
         AppIconButton(
             icon = IconWrapper.Vector(Icons.Outlined.Search),
             onClick = { eventReceiver(ShopScreenEvent.OnSearchClicked) },
@@ -318,13 +304,24 @@ fun MainData(
             }
             if (uiState.searchQuery.isEmpty()) {
 
-                if (uiState.tabs.isNotEmpty()) {
+                if (uiState.categoryTabs.isNotEmpty()) {
                     ShopTabs(
-                        selectedTabIndex = uiState.selectedTabIndex,
-                        tabs = uiState.tabs,
+                        selectedTabIndex = uiState.selectedCategoryIndex,
+                        tabs = uiState.categoryTabs,
                         eventReceiver = eventReceiver
                     )
                 }
+
+                Spacer(Modifier.height(8.dp))
+
+                AnimatedVisibility(uiState.subcategoryTabs.isNotEmpty()) {
+                    ShopSubTabs(
+                        selectedTabIndex = uiState.selectedSubcategoryIndex,
+                        tabs = uiState.subcategoryTabs,
+                        eventReceiver = eventReceiver
+                    )
+                }
+
             } else {
                 Text(
                     modifier = Modifier
@@ -340,8 +337,7 @@ fun MainData(
 
             val productListModifier =
                 if (uiState.shopStatus != ShopStatus.ORDER) Modifier.padding(bottom = statusRawHeight) else Modifier
-
-            val selectedTab = uiState.tabs[uiState.selectedTabIndex]
+            val currentSubTab = uiState.subcategoryTabs.getOrNull(uiState.selectedSubcategoryIndex)
             when {
                 uiState.isSearchEnabled && uiState.searchQuery.isNotEmpty() && uiState.searchResult.isNotEmpty() -> {
                     ProductsList(
@@ -356,12 +352,15 @@ fun MainData(
                     ItemNotFound()
                 }
 
-                selectedTab is TabItem.PromotionTab -> PromotionsList(
-                    items = selectedTab.promotions,
-                    currency = uiState.currency,
-                    shopStatus = uiState.shopStatus,
-                    eventReceiver = eventReceiver,
-                )
+                currentSubTab is SubcategoryTabItem.PromotionTab -> {
+                    PromotionsList(
+                        items = currentSubTab.promotions,
+                        currency = currency,
+                        shopStatus = uiState.shopStatus,
+                        eventReceiver = eventReceiver,
+                        modifier = productListModifier
+                    )
+                }
 
                 else -> {
                     ProductsList(
@@ -400,7 +399,7 @@ fun MainData(
 @Composable
 private fun ShopTabs(
     selectedTabIndex: Int,
-    tabs: List<TabItem>,
+    tabs: List<CategoryTabItem>,
     eventReceiver: (ShopScreenEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -425,6 +424,52 @@ private fun ShopTabs(
             Tab(
                 selected = isTabSelected,
                 onClick = { eventReceiver(ShopScreenEvent.OnTabSelected(tab, index)) },
+                text = {
+                    Text(
+                        text = tab.getTabName(),
+                        style = if (isTabSelected) B_16 else N_16,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ShopSubTabs(
+    selectedTabIndex: Int,
+    tabs: List<SubcategoryTabItem>,
+    eventReceiver: (ShopScreenEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (tabs.isEmpty()) return
+
+    SecondaryScrollableTabRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background),
+        selectedTabIndex = selectedTabIndex,
+        containerColor = Color.Transparent,
+        indicator = {
+            TabRowDefaults.SecondaryIndicator(
+                modifier = Modifier.tabIndicatorOffset(
+                    selectedTabIndex,
+                    matchContentSize = false
+                ),
+            )
+        },
+        edgePadding = 0.dp
+    ) {
+        tabs.forEachIndexed { index, tab ->
+            val isTabSelected = index == selectedTabIndex
+            Tab(
+                selected = isTabSelected,
+                onClick = {
+                    eventReceiver(ShopScreenEvent.OnSubTabSelected(tab, index))
+                },
                 text = {
                     Text(
                         text = tab.getTabName(),
@@ -570,11 +615,16 @@ private fun ListItem(
     shopStatus: ShopStatus,
     modifier: Modifier = Modifier
 ) {
+    val priceData = item.product.prices.find { it.currency == currency }
     Card(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .clickable { eventReceiver(ShopScreenEvent.OnProductClicked(item.product.itemId)) }
+            .clickable {
+                if(priceData != null) {
+                    eventReceiver(ShopScreenEvent.OnProductClicked(item.product.itemId))
+                }
+            }
             .background(MaterialTheme.colorScheme.background, shape = RoundedCornerShape(8.dp)),
     ) {
         Column(
@@ -630,15 +680,13 @@ private fun ListItem(
                 color = textColor,
             )
 
-            val priceData =
-                item.product.prices.find { it.currency == currency } ?: item.product.prices.first()
             val textStyle = N_12_20.copy(color = textColor)
 
             Text(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 5.dp),
-                text = priceData.amount.toString() + " " + priceData.currency,
+                text = priceData?.let { it.amount.toString() + " " + it.currency } ?: "-",
                 style = textStyle,
             )
             Text(
@@ -996,48 +1044,6 @@ fun LimitReachedIcon(
                 contentDescriptionId = CoreR.string.not_selected_content_description,
                 modifier = Modifier.size(32.dp)
             )
-        }
-    }
-}
-
-@Composable
-fun MenuSelector(
-    menus: List<Menu>,
-    onMenuSelected: (menu: Menu) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .padding(horizontal = 16.dp, vertical = 24.dp)
-            .fillMaxSize(),
-        verticalArrangement = Arrangement.Top
-    ) {
-        Text(
-            text = stringResource(R.string.menu_selection),
-            style = B_22_30,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-
-        Text(
-            modifier = Modifier.padding(top = 16.dp),
-            text = stringResource(R.string.choose_which_menu_you_want_to_view_based_on_your_preferences),
-            style = N_18_26,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-
-        LazyColumn(
-            modifier = Modifier
-                .padding(top = 24.dp)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            items(items = menus, itemContent = { menu ->
-                AppButton(
-                    text = menu.displayName.first().text,
-                    onClick = { onMenuSelected.invoke(menu) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            })
         }
     }
 }
